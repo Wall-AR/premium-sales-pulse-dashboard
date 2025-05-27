@@ -1,6 +1,5 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
 interface Salesperson {
   name: string;
@@ -8,10 +7,6 @@ interface Salesperson {
   goal: number;
   challenge: number;
   mega: number;
-  clients: number;
-  newClients: number;
-  avgTicket: number;
-  photo?: string;
 }
 
 interface GoalProgressProps {
@@ -19,77 +14,65 @@ interface GoalProgressProps {
 }
 
 export const GoalProgress = ({ salespeople }: GoalProgressProps) => {
-  const getAchievedLevel = (person: Salesperson) => {
-    const percMega = person.sold / person.mega;
-    const percChallenge = person.sold / person.challenge;
-    const percGoal = person.sold / person.goal;
-    
-    if (percMega >= 1) return 3;
-    if (percChallenge >= 1) return 2;
-    if (percGoal >= 1) return 1;
-    return 0;
-  };
+  const totalSold = salespeople.reduce((sum, person) => sum + person.sold, 0);
+  const totalGoal = salespeople.reduce((sum, person) => sum + person.goal, 0);
+  const progressPercentage = (totalSold / totalGoal) * 100;
 
-  const getCurrentGoal = (person: Salesperson) => {
-    const level = getAchievedLevel(person);
-    switch (level) {
-      case 0: return { amount: person.goal, name: "GOAL" };
-      case 1: return { amount: person.challenge, name: "CHALLENGE" };
-      case 2: return { amount: person.mega, name: "MEGA" };
-      case 3: return { amount: person.mega, name: "MEGA ACHIEVED" };
-      default: return { amount: person.goal, name: "GOAL" };
-    }
-  };
-
-  const getGoalColor = (level: number) => {
-    switch (level) {
-      case 0: return "emerald";
-      case 1: return "amber";
-      case 2: return "gray";
-      case 3: return "yellow";
-      default: return "emerald";
-    }
-  };
+  // Calculate the stroke dasharray for the circle
+  const radius = 80;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDasharray = `${(progressPercentage / 100) * circumference} ${circumference}`;
 
   return (
-    <Card className="bg-white shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white">
-        <CardTitle>🎯 Goal Progress</CardTitle>
+    <Card className="bg-white shadow-sm">
+      <CardHeader className="bg-gray-50 border-b">
+        <CardTitle className="text-gray-700 text-center">Progresso para Meta Empresa</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="space-y-6">
-          {salespeople.map((person) => {
-            const level = getAchievedLevel(person);
-            const currentGoal = getCurrentGoal(person);
-            const progress = (person.sold / currentGoal.amount) * 100;
-            const color = getGoalColor(level);
+        <div className="flex items-center justify-center">
+          <div className="relative w-48 h-48">
+            {/* Background circle */}
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+              <circle
+                cx="100"
+                cy="100"
+                r={radius}
+                stroke="#e5e7eb"
+                strokeWidth="20"
+                fill="none"
+              />
+              {/* Progress circle */}
+              <circle
+                cx="100"
+                cy="100"
+                r={radius}
+                stroke="#059669"
+                strokeWidth="20"
+                fill="none"
+                strokeDasharray={strokeDasharray}
+                strokeLinecap="round"
+                className="transition-all duration-1000 ease-out"
+              />
+            </svg>
             
-            return (
-              <div key={person.name} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-emerald-800">{person.name}</h3>
-                    <p className="text-sm text-emerald-600">{currentGoal.name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-emerald-800">R$ {person.sold.toLocaleString()}</p>
-                    <p className="text-sm text-emerald-600">/ R$ {currentGoal.amount.toLocaleString()}</p>
-                  </div>
+            {/* Center content */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {progressPercentage.toFixed(0)}%
                 </div>
-                
-                <Progress 
-                  value={Math.min(progress, 100)} 
-                  className="h-3"
-                />
-                
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>Goal: R$ {person.goal.toLocaleString()}</span>
-                  <span>Challenge: R$ {person.challenge.toLocaleString()}</span>
-                  <span>Mega: R$ {person.mega.toLocaleString()}</span>
+                <div className="text-xs text-gray-500 mt-1">
+                  Meta Atingida
                 </div>
               </div>
-            );
-          })}
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">
+            R$ {totalSold.toLocaleString()} de R$ {totalGoal.toLocaleString()}
+          </p>
         </div>
       </CardContent>
     </Card>

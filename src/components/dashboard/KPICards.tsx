@@ -14,56 +14,55 @@ interface KPICardsProps {
 
 export const KPICards = ({ data }: KPICardsProps) => {
   const goalPercentage = (data.totalSold / data.totalGoal) * 100;
-  const newClientPercentage = (data.newClients / data.totalClients) * 100;
 
   const kpis = [
     {
-      title: "Total Sales",
+      title: "Total Vendido",
       value: `R$ ${data.totalSold.toLocaleString()}`,
       icon: DollarSign,
       color: "emerald",
-      subtitle: `${goalPercentage.toFixed(1)}% of goal`,
-      trend: goalPercentage >= 100 ? "up" : "neutral"
+      subtitle: `↗ ${goalPercentage.toFixed(1)}% da meta`,
+      bgColor: "bg-white"
     },
     {
-      title: "Total Clients",
+      title: "Total Clientes", 
       value: data.totalClients.toLocaleString(),
       icon: Users,
-      color: "green",
-      subtitle: `${data.newClients} new clients`,
-      trend: "up"
+      color: "emerald",
+      subtitle: `👥 ${data.newClients} novos`,
+      bgColor: "bg-white"
     },
     {
-      title: "Goal Achievement",
-      value: `${goalPercentage.toFixed(1)}%`,
-      icon: Target,
-      color: goalPercentage >= 100 ? "emerald" : goalPercentage >= 80 ? "yellow" : "red",
-      subtitle: `R$ ${data.totalGoal.toLocaleString()} target`,
-      trend: goalPercentage >= 100 ? "up" : "neutral"
-    },
-    {
-      title: "Avg. Ticket",
+      title: "Ticket Médio",
       value: `R$ ${data.globalAvgTicket.toLocaleString()}`,
       icon: TrendingUp,
-      color: "teal",
-      subtitle: "Per client",
-      trend: "up"
+      color: "emerald", 
+      subtitle: "📊 Por vendedor",
+      bgColor: "bg-white"
+    },
+    {
+      title: "Faturado",
+      value: `R$ ${(data.totalSold * 0.8).toLocaleString()}`,
+      icon: Target,
+      color: "gray",
+      subtitle: `● R$ ${(data.totalSold * 0.2).toLocaleString()} atrasado`,
+      bgColor: "bg-white"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {kpis.map((kpi, index) => (
-        <Card key={index} className="bg-white border-l-4 border-l-emerald-500 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{kpi.title}</p>
-                <p className="text-2xl font-bold text-emerald-800 mt-1">{kpi.value}</p>
-                <p className="text-xs text-gray-500 mt-1">{kpi.subtitle}</p>
+        <Card key={index} className={`${kpi.bgColor} shadow-sm border hover:shadow-md transition-shadow`}>
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">{kpi.title}</p>
+                <p className="text-xl font-bold text-gray-900 mb-1">{kpi.value}</p>
+                <p className="text-xs text-gray-500">{kpi.subtitle}</p>
               </div>
-              <div className={`p-3 rounded-full bg-${kpi.color}-100`}>
-                <kpi.icon className={`w-6 h-6 text-${kpi.color}-600`} />
+              <div className="ml-3">
+                <kpi.icon className="w-5 h-5 text-emerald-600" />
               </div>
             </div>
           </CardContent>
