@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -49,8 +50,8 @@ const Configuration = () => {
     setShowAddForm(false);
     
     toast({
-      title: "Salesperson Added!",
-      description: `${newPerson.name} has been added to the team.`,
+      title: "Vendedor Adicionado!",
+      description: `${newPerson.name} foi adicionado à equipe.`,
     });
   };
 
@@ -59,8 +60,8 @@ const Configuration = () => {
     setSalespeople(salespeople.filter((_, i) => i !== index));
     
     toast({
-      title: "Salesperson Removed",
-      description: `${person.name} has been removed from the team.`,
+      title: "Vendedor Removido",
+      description: `${person.name} foi removido da equipe.`,
       variant: "destructive",
     });
   };
@@ -74,7 +75,7 @@ const Configuration = () => {
   const totalGoals = salespeople.reduce((sum, person) => sum + person.goal, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-6 py-20">
@@ -84,53 +85,55 @@ const Configuration = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate("/")}
-                className="mr-4 hover:bg-purple-100"
+                className="mr-4 hover:bg-green-100 text-green-700"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                Voltar ao Dashboard
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-purple-800">Team Configuration</h1>
-                <p className="text-purple-600">Manage salespeople and their goals</p>
+                <h1 className="text-3xl font-bold text-green-800">Configuração da Equipe</h1>
+                <p className="text-green-600">Gerencie vendedores e suas metas</p>
               </div>
             </div>
             
             <div className="text-right">
-              <p className="text-sm text-purple-600">Total Company Goal</p>
-              <p className="text-2xl font-bold text-purple-800">R$ {totalGoals.toLocaleString()}</p>
+              <p className="text-sm text-green-600">Meta Total da Empresa</p>
+              <p className="text-2xl font-bold text-green-800">R$ {totalGoals.toLocaleString('pt-BR')}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Existing Salespeople */}
+            {/* Vendedores Existentes */}
             <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+              <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
                 <CardTitle className="flex items-center">
                   <Users className="w-6 h-6 mr-2" />
-                  Current Team ({salespeople.length})
+                  Equipe Atual ({salespeople.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 max-h-96 overflow-y-auto">
                 <div className="space-y-4">
                   {salespeople.map((person, index) => (
-                    <div key={index} className="p-4 border rounded-lg hover:bg-purple-50 transition-colors">
+                    <div key={index} className="p-4 border border-green-200 rounded-lg hover:bg-green-50 transition-colors">
                       <div className="flex items-center space-x-4 mb-4">
-                        <Avatar className="w-12 h-12">
+                        <Avatar className="w-12 h-12 border-2 border-green-300">
                           <AvatarImage src={person.photo} />
-                          <AvatarFallback>{person.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarFallback className="bg-green-100 text-green-700">
+                            {person.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <Input
                             value={person.name}
                             onChange={(e) => handleUpdatePerson(index, 'name', e.target.value)}
-                            className="font-semibold"
+                            className="font-semibold border-green-200 focus:border-green-500"
                           />
                         </div>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleRemovePerson(index)}
-                          className="text-red-600 hover:bg-red-50"
+                          className="text-red-600 hover:bg-red-50 border-red-300"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -138,30 +141,30 @@ const Configuration = () => {
                       
                       <div className="grid grid-cols-3 gap-3 text-sm">
                         <div>
-                          <Label>Goal</Label>
+                          <Label className="text-green-700">Meta</Label>
                           <Input
                             type="number"
                             value={person.goal}
                             onChange={(e) => handleUpdatePerson(index, 'goal', parseInt(e.target.value) || 0)}
-                            className="text-xs"
+                            className="text-xs border-green-200 focus:border-green-500"
                           />
                         </div>
                         <div>
-                          <Label>Challenge</Label>
+                          <Label className="text-green-700">Desafio</Label>
                           <Input
                             type="number"
                             value={person.challenge}
                             onChange={(e) => handleUpdatePerson(index, 'challenge', parseInt(e.target.value) || 0)}
-                            className="text-xs"
+                            className="text-xs border-green-200 focus:border-green-500"
                           />
                         </div>
                         <div>
-                          <Label>Mega</Label>
+                          <Label className="text-green-700">Mega</Label>
                           <Input
                             type="number"
                             value={person.mega}
                             onChange={(e) => handleUpdatePerson(index, 'mega', parseInt(e.target.value) || 0)}
-                            className="text-xs"
+                            className="text-xs border-green-200 focus:border-green-500"
                           />
                         </div>
                       </div>
@@ -171,12 +174,12 @@ const Configuration = () => {
               </CardContent>
             </Card>
 
-            {/* Add New Salesperson */}
+            {/* Adicionar Novo Vendedor */}
             <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white">
                 <CardTitle className="flex items-center">
                   <Plus className="w-6 h-6 mr-2" />
-                  Add New Team Member
+                  Adicionar Novo Membro
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
@@ -186,54 +189,59 @@ const Configuration = () => {
                     className="w-full bg-green-600 hover:bg-green-700"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Salesperson
+                    Adicionar Vendedor
                   </Button>
                 ) : (
                   <div className="space-y-4">
                     <div>
-                      <Label>Name *</Label>
+                      <Label className="text-green-700 font-medium">Nome *</Label>
                       <Input
                         value={newPerson.name}
                         onChange={(e) => setNewPerson({...newPerson, name: e.target.value})}
-                        placeholder="Salesperson name"
+                        placeholder="Nome do vendedor"
+                        className="border-green-200 focus:border-green-500"
                       />
                     </div>
                     
                     <div>
-                      <Label>Photo URL</Label>
+                      <Label className="text-green-700 font-medium">URL da Foto</Label>
                       <Input
                         value={newPerson.photo}
                         onChange={(e) => setNewPerson({...newPerson, photo: e.target.value})}
-                        placeholder="https://example.com/photo.jpg"
+                        placeholder="https://exemplo.com/foto.jpg"
+                        className="border-green-200 focus:border-green-500"
                       />
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <Label>Goal *</Label>
+                        <Label className="text-green-700 font-medium">Meta *</Label>
                         <Input
                           type="number"
                           value={newPerson.goal || ""}
                           onChange={(e) => setNewPerson({...newPerson, goal: parseInt(e.target.value) || 0})}
                           placeholder="30000"
+                          className="border-green-200 focus:border-green-500"
                         />
                       </div>
                       <div>
-                        <Label>Challenge</Label>
+                        <Label className="text-green-700 font-medium">Desafio</Label>
                         <Input
                           type="number"
                           value={newPerson.challenge || ""}
                           onChange={(e) => setNewPerson({...newPerson, challenge: parseInt(e.target.value) || 0})}
                           placeholder="42000"
+                          className="border-green-200 focus:border-green-500"
                         />
                       </div>
                       <div>
-                        <Label>Mega</Label>
+                        <Label className="text-green-700 font-medium">Mega</Label>
                         <Input
                           type="number"
                           value={newPerson.mega || ""}
                           onChange={(e) => setNewPerson({...newPerson, mega: parseInt(e.target.value) || 0})}
                           placeholder="55000"
+                          className="border-green-200 focus:border-green-500"
                         />
                       </div>
                     </div>
@@ -242,9 +250,9 @@ const Configuration = () => {
                       <Button
                         variant="outline"
                         onClick={() => setShowAddForm(false)}
-                        className="flex-1"
+                        className="flex-1 border-green-300 text-green-700 hover:bg-green-50"
                       >
-                        Cancel
+                        Cancelar
                       </Button>
                       <Button
                         onClick={handleAddPerson}
@@ -252,7 +260,7 @@ const Configuration = () => {
                         className="flex-1 bg-green-600 hover:bg-green-700"
                       >
                         <Save className="w-4 h-4 mr-2" />
-                        Add
+                        Adicionar
                       </Button>
                     </div>
                   </div>

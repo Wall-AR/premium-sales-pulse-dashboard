@@ -11,36 +11,44 @@ import { salesData } from "@/data/salesData";
 
 export const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
-      {/* Main Dashboard Header */}
-      <div className="bg-emerald-600 text-white">
+      {/* Cabeçalho Principal do Dashboard */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-700 text-white">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Dashboard Aprimorado com Fotos dos Vendedores</h1>
-              <p className="text-emerald-100 mt-1">Visualização personalizada para identificação rápida da equipe e seus resultados</p>
+            <div className="flex items-center space-x-4">
+              <img 
+                src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
+                alt="NutraScore Logo" 
+                className="h-12 w-auto"
+              />
+              <div>
+                <h1 className="text-3xl font-bold">NutraScore Dashboard</h1>
+                <p className="text-green-100 mt-1">Sistema Avançado de Gestão de Vendas e Performance</p>
+              </div>
             </div>
-            <div className="text-right text-emerald-100">
-              <p className="text-sm">Visualização com Fotos dos Vendedores</p>
+            <div className="text-right text-green-100">
+              <p className="text-sm">Dashboard Profissional</p>
+              <p className="text-xs">Visualização com Fotos dos Vendedores</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Dashboard Title Bar */}
-      <div className="bg-emerald-700 text-white">
+      {/* Barra de Título do Dashboard */}
+      <div className="bg-green-700 text-white">
         <div className="container mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <span className="text-emerald-200">📊</span>
+              <span className="text-green-200">📊</span>
               <span className="font-medium">Dashboard de Vendas | Abril 2025</span>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="text-emerald-200 hover:text-white">⟲</button>
-              <button className="text-emerald-200 hover:text-white">⚙️</button>
-              <button className="text-emerald-200 hover:text-white">⛶</button>
+              <button className="text-green-200 hover:text-white transition-colors">⟲</button>
+              <button className="text-green-200 hover:text-white transition-colors">⚙️</button>
+              <button className="text-green-200 hover:text-white transition-colors">⛶</button>
             </div>
           </div>
         </div>
@@ -48,46 +56,46 @@ export const Dashboard = () => {
       
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Filters Sidebar */}
+          {/* Barra Lateral de Filtros */}
           <div className="lg:col-span-1">
             <DashboardFilters />
           </div>
           
-          {/* Main Content */}
+          {/* Conteúdo Principal */}
           <div className="lg:col-span-4 space-y-6">
-            {/* KPI Cards */}
+            {/* Cards KPI */}
             <KPICards data={salesData} />
             
-            {/* Main Content Grid */}
+            {/* Grade de Conteúdo Principal */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Salesperson Ranking */}
+              {/* Ranking de Vendedores */}
               <div className="lg:col-span-2">
                 <SalespersonRanking salespeople={salesData.salespeople} />
               </div>
               
-              {/* Goal Progress */}
+              {/* Progresso das Metas */}
               <div className="lg:col-span-1">
                 <GoalProgress salespeople={salesData.salespeople} />
               </div>
             </div>
             
-            {/* Sales Chart */}
+            {/* Gráfico de Vendas */}
             <div className="w-full">
               <SalesChart data={salesData.dailySales} />
             </div>
           </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* Seção Inferior */}
         <div className="mt-8">
           <CustomerAnalysis data={salesData} />
         </div>
 
-        {/* Resources Section */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
+        {/* Seção de Recursos */}
+        <div className="mt-8 bg-white rounded-lg shadow-lg border border-green-100 p-6">
           <div className="flex items-center mb-4">
             <span className="text-2xl mr-3">📸</span>
-            <h3 className="text-lg font-semibold text-gray-800">Recursos de Fotos dos Vendedores</h3>
+            <h3 className="text-lg font-semibold text-green-800">Recursos de Fotos dos Vendedores</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -96,8 +104,8 @@ export const Dashboard = () => {
                 <span className="text-green-600">🔍</span>
               </div>
               <div>
-                <h4 className="font-medium text-gray-800">Identificação Visual</h4>
-                <p className="text-sm text-gray-600">Reconheça vendedores instantaneamente através de suas fotos</p>
+                <h4 className="font-medium text-green-800">Identificação Visual</h4>
+                <p className="text-sm text-green-600">Reconheça vendedores instantaneamente através de suas fotos</p>
               </div>
             </div>
             
@@ -106,18 +114,18 @@ export const Dashboard = () => {
                 <span className="text-yellow-600">👑</span>
               </div>
               <div>
-                <h4 className="font-medium text-gray-800">Badges de Conquista</h4>
-                <p className="text-sm text-gray-600">Ícones de coroa e medalhas acompanham as fotos dos líderes</p>
+                <h4 className="font-medium text-green-800">Medalhas de Conquista</h4>
+                <p className="text-sm text-green-600">Ícones de coroa e medalhas acompanham as fotos dos líderes</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-3">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <span className="text-blue-600">🔄</span>
+              <div className="bg-green-100 p-2 rounded-lg">
+                <span className="text-green-600">🔄</span>
               </div>
               <div>
-                <h4 className="font-medium text-gray-800">Atualização Dinâmica</h4>
-                <p className="text-sm text-gray-600">Fotos reorganizam conforme mudanças no ranking</p>
+                <h4 className="font-medium text-green-800">Atualização Dinâmica</h4>
+                <p className="text-sm text-green-600">Fotos reorganizam conforme mudanças no ranking</p>
               </div>
             </div>
           </div>

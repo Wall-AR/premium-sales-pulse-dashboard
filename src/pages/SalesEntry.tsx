@@ -27,16 +27,14 @@ const SalesEntry = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Here you would normally save to your backend/database
-    console.log("New sale:", formData);
+    console.log("Nova venda:", formData);
     
     toast({
-      title: "Sale Registered Successfully!",
-      description: `R$ ${parseFloat(formData.amount).toLocaleString()} sale by ${formData.salesperson}`,
+      title: "Venda Registrada com Sucesso!",
+      description: `R$ ${parseFloat(formData.amount).toLocaleString('pt-BR')} vendidos por ${formData.salesperson}`,
       duration: 3000,
     });
 
-    // Reset form
     setFormData({
       salesperson: "",
       amount: "",
@@ -48,7 +46,7 @@ const SalesEntry = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-6 py-20">
@@ -57,32 +55,32 @@ const SalesEntry = () => {
             <Button
               variant="ghost"
               onClick={() => navigate("/")}
-              className="mr-4 hover:bg-blue-100"
+              className="mr-4 hover:bg-green-100 text-green-700"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Voltar ao Dashboard
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-blue-800">New Sale Entry</h1>
-              <p className="text-blue-600">Register a new sale in the system</p>
+              <h1 className="text-3xl font-bold text-green-800">Registrar Nova Venda</h1>
+              <p className="text-green-600">Cadastre uma nova venda no sistema</p>
             </div>
           </div>
 
           <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
               <CardTitle className="flex items-center">
                 <DollarSign className="w-6 h-6 mr-2" />
-                Sale Information
+                Informações da Venda
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="salesperson">Salesperson *</Label>
+                    <Label htmlFor="salesperson" className="text-green-700 font-medium">Vendedor *</Label>
                     <Select value={formData.salesperson} onValueChange={(value) => setFormData({...formData, salesperson: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select salesperson" />
+                      <SelectTrigger className="border-green-200 focus:border-green-500">
+                        <SelectValue placeholder="Selecione o vendedor" />
                       </SelectTrigger>
                       <SelectContent>
                         {salesData.salespeople.map((person) => (
@@ -95,59 +93,63 @@ const SalesEntry = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Sale Amount (R$) *</Label>
+                    <Label htmlFor="amount" className="text-green-700 font-medium">Valor da Venda (R$) *</Label>
                     <Input
                       id="amount"
                       type="number"
                       step="0.01"
-                      placeholder="0.00"
+                      placeholder="0,00"
                       value={formData.amount}
                       onChange={(e) => setFormData({...formData, amount: e.target.value})}
                       required
-                      className="text-lg font-semibold"
+                      className="text-lg font-semibold border-green-200 focus:border-green-500"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="date">Sale Date *</Label>
+                    <Label htmlFor="date" className="text-green-700 font-medium">Data da Venda *</Label>
                     <Input
                       id="date"
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
                       required
+                      className="border-green-200 focus:border-green-500"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="orderNumber">Order Number *</Label>
+                    <Label htmlFor="orderNumber" className="text-green-700 font-medium">Número do Pedido *</Label>
                     <Input
                       id="orderNumber"
-                      placeholder="e.g., ORD-2025-001"
+                      placeholder="ex: PED-2025-001"
                       value={formData.orderNumber}
                       onChange={(e) => setFormData({...formData, orderNumber: e.target.value})}
                       required
+                      className="border-green-200 focus:border-green-500"
                     />
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="customerName">Customer Name</Label>
+                    <Label htmlFor="customerName" className="text-green-700 font-medium">Nome do Cliente</Label>
                     <Input
                       id="customerName"
-                      placeholder="Customer name"
+                      placeholder="Nome do cliente"
                       value={formData.customerName}
                       onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+                      className="border-green-200 focus:border-green-500"
                     />
                   </div>
 
-                  <div className="md:col-span-2 flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
+                  <div className="md:col-span-2 flex items-center space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
                     <Checkbox
                       id="isNewCustomer"
                       checked={formData.isNewCustomer}
                       onCheckedChange={(checked) => setFormData({...formData, isNewCustomer: checked as boolean})}
+                      className="border-green-300"
                     />
                     <Label htmlFor="isNewCustomer" className="text-green-700 font-medium">
-                      This is a new customer
+                      Este é um cliente novo
                     </Label>
                   </div>
                 </div>
@@ -157,16 +159,17 @@ const SalesEntry = () => {
                     type="button"
                     variant="outline"
                     onClick={() => navigate("/")}
+                    className="border-green-300 text-green-700 hover:bg-green-50"
                   >
-                    Cancel
+                    Cancelar
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+                    className="bg-green-600 hover:bg-green-700 text-white px-8"
                     disabled={!formData.salesperson || !formData.amount || !formData.orderNumber}
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Save Sale
+                    Salvar Venda
                   </Button>
                 </div>
               </form>

@@ -18,51 +18,55 @@ export const KPICards = ({ data }: KPICardsProps) => {
   const kpis = [
     {
       title: "Total Vendido",
-      value: `R$ ${data.totalSold.toLocaleString()}`,
+      value: `R$ ${data.totalSold.toLocaleString('pt-BR')}`,
       icon: DollarSign,
       color: "emerald",
       subtitle: `↗ ${goalPercentage.toFixed(1)}% da meta`,
-      bgColor: "bg-white"
+      bgColor: "bg-white",
+      borderColor: "border-green-200"
     },
     {
-      title: "Total Clientes", 
-      value: data.totalClients.toLocaleString(),
+      title: "Total de Clientes", 
+      value: data.totalClients.toLocaleString('pt-BR'),
       icon: Users,
       color: "emerald",
-      subtitle: `👥 ${data.newClients} novos`,
-      bgColor: "bg-white"
+      subtitle: `👥 ${data.newClients} novos clientes`,
+      bgColor: "bg-white",
+      borderColor: "border-green-200"
     },
     {
       title: "Ticket Médio",
-      value: `R$ ${data.globalAvgTicket.toLocaleString()}`,
+      value: `R$ ${data.globalAvgTicket.toLocaleString('pt-BR')}`,
       icon: TrendingUp,
       color: "emerald", 
-      subtitle: "📊 Por vendedor",
-      bgColor: "bg-white"
+      subtitle: "📊 Média por vendedor",
+      bgColor: "bg-white",
+      borderColor: "border-green-200"
     },
     {
-      title: "Faturado",
-      value: `R$ ${(data.totalSold * 0.8).toLocaleString()}`,
+      title: "Valor Faturado",
+      value: `R$ ${(data.totalSold * 0.8).toLocaleString('pt-BR')}`,
       icon: Target,
       color: "gray",
-      subtitle: `● R$ ${(data.totalSold * 0.2).toLocaleString()} atrasado`,
-      bgColor: "bg-white"
+      subtitle: `● R$ ${(data.totalSold * 0.2).toLocaleString('pt-BR')} em atraso`,
+      bgColor: "bg-white",
+      borderColor: "border-green-200"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {kpis.map((kpi, index) => (
-        <Card key={index} className={`${kpi.bgColor} shadow-sm border hover:shadow-md transition-shadow`}>
-          <CardContent className="p-4">
+        <Card key={index} className={`${kpi.bgColor} shadow-lg border-2 ${kpi.borderColor} hover:shadow-xl transition-all duration-300 hover:scale-105`}>
+          <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">{kpi.title}</p>
-                <p className="text-xl font-bold text-gray-900 mb-1">{kpi.value}</p>
-                <p className="text-xs text-gray-500">{kpi.subtitle}</p>
+                <p className="text-sm font-medium text-green-700 mb-2">{kpi.title}</p>
+                <p className="text-2xl font-bold text-green-800 mb-2">{kpi.value}</p>
+                <p className="text-xs text-green-600">{kpi.subtitle}</p>
               </div>
               <div className="ml-3">
-                <kpi.icon className="w-5 h-5 text-emerald-600" />
+                <kpi.icon className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
