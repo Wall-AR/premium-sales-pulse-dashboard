@@ -2,6 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Crown, Medal } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Salesperson {
   name: string;
@@ -20,6 +21,7 @@ interface SalespersonRankingProps {
 }
 
 export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => {
+  const navigate = useNavigate();
   const sortedSalespeople = [...salespeople].sort((a, b) => b.sold - a.sold);
 
   const getRankIcon = (position: number) => {
@@ -48,6 +50,10 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
     }
   };
 
+  const handlePersonClick = (person: Salesperson) => {
+    navigate(`/salesperson/${person.name.toLowerCase()}`);
+  };
+
   return (
     <Card className="bg-white shadow-lg">
       <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white">
@@ -61,14 +67,15 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
             return (
               <div
                 key={person.name}
-                className={`p-4 rounded-lg border-2 transition-all duration-300 ${
+                onClick={() => handlePersonClick(person)}
+                className={`p-4 rounded-lg border-2 transition-all duration-300 cursor-pointer hover:shadow-md hover:scale-[1.02] ${
                   index === 0
-                    ? "border-yellow-300 bg-yellow-50"
+                    ? "border-yellow-300 bg-yellow-50 hover:bg-yellow-100"
                     : index === 1
-                    ? "border-gray-300 bg-gray-50"
+                    ? "border-gray-300 bg-gray-50 hover:bg-gray-100"
                     : index === 2
-                    ? "border-amber-300 bg-amber-50"
-                    : "border-emerald-200 bg-emerald-50"
+                    ? "border-amber-300 bg-amber-50 hover:bg-amber-100"
+                    : "border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
                 }`}
               >
                 <div className="flex items-center space-x-4">
@@ -86,7 +93,9 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-emerald-800">{person.name}</h3>
+                        <h3 className="font-semibold text-emerald-800 hover:text-emerald-600 transition-colors">
+                          {person.name}
+                        </h3>
                         <p className="text-xs text-emerald-600">{getRankTitle(index)}</p>
                       </div>
                       <div className="text-right">
