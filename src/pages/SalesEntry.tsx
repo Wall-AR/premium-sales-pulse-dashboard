@@ -214,67 +214,7 @@ const SalesEntry = () => {
                       Este é um cliente novo
                     </Label>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="amount" className="text-green-700 font-medium">Valor da Venda (R$) *</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="0,00"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                      required
-                      className="text-lg font-semibold border-green-200 focus:border-green-500"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="date" className="text-green-700 font-medium">Data da Venda *</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
-                      required
-                      className="border-green-200 focus:border-green-500"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="orderNumber" className="text-green-700 font-medium">Número do Pedido *</Label>
-                    <Input
-                      id="orderNumber"
-                      placeholder="ex: PED-2025-001"
-                      value={formData.orderNumber}
-                      onChange={(e) => setFormData({...formData, orderNumber: e.target.value})}
-                      required
-                      className="border-green-200 focus:border-green-500"
-                    />
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="customerName" className="text-green-700 font-medium">Nome do Cliente</Label>
-                    <Input
-                      id="customerName"
-                      placeholder="Nome do cliente"
-                      value={formData.customerName}
-                      onChange={(e) => setFormData({...formData, customerName: e.target.value})}
-                      className="border-green-200 focus:border-green-500"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 flex items-center space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <Checkbox
-                      id="isNewCustomer"
-                      checked={formData.isNewCustomer}
-                      onCheckedChange={(checked) => setFormData({...formData, isNewCustomer: checked as boolean})}
-                      className="border-green-300"
-                    />
-                    <Label htmlFor="isNewCustomer" className="text-green-700 font-medium">
-                      Este é um cliente novo
-                    </Label>
-                  </div>
+                  {/* The duplicated form field block starting from the second "Valor da Venda (R$) *" was here and has been removed. */}
                 </div>
 
                 <div className="flex justify-end space-x-4 pt-6">

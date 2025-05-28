@@ -19,7 +19,7 @@ export const SignupPage = () => {
     setLoading(true);
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+      setError("A senha deve ter pelo menos 6 caracteres.");
       setLoading(false);
       return;
     }
@@ -28,23 +28,23 @@ export const SignupPage = () => {
 
     setLoading(false);
     if (authError) {
-      setError(authError.message);
+      setError(authError.message); // Keep other potential Supabase errors as is, or map them
     } else if (data.user) {
       // data.user.identities?.length === 0 can indicate email already exists without confirmed email
       if (data.user.identities && data.user.identities.length === 0) {
-         setError("User already exists. Please try logging in or use a different email.");
+         setError("Usuário já existe. Por favor, tente fazer login ou use um e-mail diferente.");
       } else {
         // On successful signup, Supabase sends a confirmation email.
         // You might want to navigate to a page saying "Please check your email"
         // or directly to login, or dashboard if auto-login is configured (depends on Supabase settings)
-        alert('Signup successful! Please check your email to confirm your account.'); // Or navigate to a confirmation page
+        alert('Cadastro realizado com sucesso! Por favor, verifique seu e-mail para confirmar sua conta.'); 
         navigate('/login'); 
       }
     } else {
       // Handle cases where user might be null but no error (e.g. email confirmation required)
       // Supabase default behavior is to return a user object if sign up is successful,
       // then requiring email confirmation.
-      alert('Signup initiated! Please check your email to confirm your account.');
+      alert('Cadastro iniciado! Por favor, verifique seu e-mail para confirmar sua conta.');
       navigate('/login');
     }
   };
@@ -58,17 +58,17 @@ export const SignupPage = () => {
             alt="NutraManager Logo" 
             className="w-20 h-20 mx-auto mb-4"
           />
-          <CardTitle className="text-2xl font-bold text-emerald-700">Create an Account</CardTitle>
-          <CardDescription>Sign up to access your NutraManager dashboard.</CardDescription>
+          <CardTitle className="text-2xl font-bold text-emerald-700">Criar Conta</CardTitle>
+          <CardDescription>Cadastre-se para acessar seu painel NutraManager.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="voce@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -76,7 +76,7 @@ export const SignupPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -89,15 +89,15 @@ export const SignupPage = () => {
             </div>
             {error && <p className="text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={loading}>
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Criando Conta...' : 'Criar Conta'}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="text-center">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
+            Já tem uma conta?{' '}
             <Link to="/login" className="font-medium text-emerald-600 hover:text-emerald-700">
-              Log in
+              Entrar
             </Link>
           </p>
         </CardFooter>

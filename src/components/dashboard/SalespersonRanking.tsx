@@ -1,12 +1,11 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Crown, Medal, ShieldCheck, Star, Info } from "lucide-react"; // Removed Loader2, kept Info
+import { Crown, Medal, Info } from "lucide-react"; // Removed ShieldCheck, Star
 import { useNavigate } from "react-router-dom";
-import type { Salesperson } from "@/lib/supabaseQueries";
+import type { SellerProfile } from "@/lib/supabaseQueries"; // Updated type to SellerProfile
 
 interface SalespersonRankingProps {
-  salespeople: Salesperson[] | null | undefined;
+  salespeople: SellerProfile[] | null | undefined; // Updated prop type
 }
 
 const SalespersonSkeleton: React.FC = () => {
@@ -71,7 +70,7 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
     );
   }
 
-  const sortedSalespeople = [...salespeople].sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0));
+  const sortedSalespeople = [...salespeople].sort((a, b) => a.name.localeCompare(b.name)); // Sort by name
 
   const getRankIcon = (position: number) => {
     switch (position) {
@@ -87,15 +86,18 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
   };
 
   const getProgressColor = (goalPercentage: number) => {
-    if (goalPercentage >= 100) return "bg-emerald-500";
-    if (goalPercentage >= 75) return "bg-green-400";
-    if (goalPercentage >= 50) return "bg-yellow-400";
-    if (goalPercentage >= 25) return "bg-orange-400";
-    return "bg-red-400";
+    // Performance metrics (sold, goal, progress, challenge, mega) are not available in SellerProfile
+    // So, related UI elements are removed or simplified.
+    // Progress bar and related text are removed.
+    // Challenge and Mega status are removed.
+    return "bg-gray-300"; // Default color if needed, but progress bar removed
   };
 
-  const handlePersonClick = (person: Salesperson) => {
+  const handlePersonClick = (person: SellerProfile) => { // Updated type
     // Ensure name exists before trying to use it in navigation
+    // SellerProfile has `id` which is more reliable for navigation if a detail page exists.
+    // For now, keeping navigation by name if that's the existing pattern, or using ID.
+    // navigate(`/salesperson/${person.id}`); // Example if navigating by ID
     if (person.name) {
       navigate(`/salesperson/${person.name.toLowerCase().replace(/\s+/g, '-')}`);
     }
@@ -114,14 +116,9 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
       </CardHeader>
       <CardContent className="p-4">
         <div className="space-y-3">
-          {sortedSalespeople.map((person, index) => {
-            const sold = person.sold ?? 0;
-            const goal = person.goal ?? 1; // Avoid division by zero
-            const goalPercentage = goal > 0 ? (sold / goal) * 100 : 0;
-            
-            return (
+          {sortedSalespeople.map((person, index) => (
               <div
-                key={person.name || index} // Use index as fallback if name is not guaranteed
+                key={person.id} // Use id as key
                 onClick={() => handlePersonClick(person)}
                 className="p-3 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"
               >
@@ -131,7 +128,7 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
                   </div>
                   
                   <Avatar className="w-10 h-10 border-2 border-gray-200">
-                    <AvatarImage src={person.photo_url} alt={person.name} />
+                    <AvatarImage src={person.photo_url || undefined} alt={person.name} /> {/* Use person.photo_url */}
                     <AvatarFallback className="bg-emerald-100 text-emerald-600 font-semibold text-sm">
                       {person.name ? person.name.split(' ').map(n => n[0]).join('') : 'N/A'}
                     </AvatarFallback>
@@ -140,42 +137,13 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-gray-800 text-sm">{person.name || 'Vendedor Desconhecido'}</h3>
-                      <span className="font-bold text-gray-900 text-sm">R$ {sold.toLocaleString('pt-BR')}</span>
+                      {/* Sold amount removed as it's not in SellerProfile */}
                     </div>
-                    
-                    {/* Progress Bar for Goal */}
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                      <div 
-                        className={`h-2.5 rounded-full transition-all duration-500 ${getProgressColor(goalPercentage)}`}
-                        style={{ width: `${Math.min(100, goalPercentage)}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1 text-right">
-                      Meta: {goalPercentage.toFixed(0)}% (R$ {goal.toLocaleString('pt-BR')})
-                    </div>
-
-                    {/* Challenge and Mega Status */}
-                    <div className="flex items-center space-x-3 mt-2 text-xs">
-                      {person.challenge && (
-                        <span className="flex items-center text-blue-600">
-                          <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Desafio Cumprido
-                        </span>
-                      )}
-                      {person.mega && (
-                        <span className="flex items-center text-purple-600">
-                          <Star className="w-3.5 h-3.5 mr-1" /> Mega Cumprida
-                        </span>
-                      )}
-                    </div>
-
+                    {/* Performance metrics (progress bar, goal text, challenge/mega status) are removed */}
                   </div>
-                  {/* End of flex-1 div */}
                 </div>
-                {/* End of flex items-center space-x-3 div */}
               </div>
-              // End of main item div
-            );
-          })}
+            ))}
         </div>
       </CardContent>
     </Card>

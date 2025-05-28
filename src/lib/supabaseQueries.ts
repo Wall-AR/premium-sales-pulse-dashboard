@@ -65,14 +65,27 @@ export async function getSalespeople(month_year_filter?: string): Promise<Salesp
       .limit(1)
       .single();
 
-    if (kpiError || !kpiData) {
-      console.error('Error fetching latest month_year for salespeople:', kpiError);
-      return [];
+    if (kpiError || !kpiData?.month_year) { // Check month_year specifically
+      console.error('KPI lookup failed for month_year. Trying fallback to most recent month_year in salespeople table.', kpiError);
+      const { data: latestSalespeopleMonth, error: latestSalespeopleMonthError } = await supabase
+        .from('salespeople')
+        .select('month_year') 
+        .order('month_year', { ascending: false })
+        .limit(1)
+        .maybeSingle(); // Use maybeSingle to handle null result without error
+
+      if (latestSalespeopleMonthError || !latestSalespeopleMonth?.month_year) {
+        console.error('Could not determine most recent month_year from salespeople table either:', latestSalespeopleMonthError);
+        return []; // Fallback to empty if no month_year found anywhere
+      }
+      targetMonthYear = latestSalespeopleMonth.month_year;
+      console.log("Using fallback targetMonthYear from salespeople table:", targetMonthYear);
+    } else if (kpiData?.month_year) { // Ensure kpiData and month_year exist
+      targetMonthYear = kpiData.month_year;
     }
-    targetMonthYear = kpiData.month_year;
   }
 
-  if (!targetMonthYear) {
+  if (!targetMonthYear) { // This check might be redundant if the above logic always sets it or returns
     console.error('Could not determine month_year for filtering salespeople.');
     return [];
   }
@@ -318,14 +331,27 @@ export async function getDailySales(month_year_filter?: string): Promise<DailySa
       .limit(1)
       .single();
 
-    if (kpiError || !kpiData) {
-      console.error('Error fetching latest month_year for daily sales:', kpiError);
-      return [];
+    if (kpiError || !kpiData?.month_year) { // Check month_year specifically
+      console.log("KPI lookup failed for month_year. Trying fallback to most recent month_year in salespeople table.");
+      const { data: latestSalespeopleMonth, error: latestSalespeopleMonthError } = await supabase
+        .from('salespeople')
+        .select('month_year') // Select the month_year column
+        .order('month_year', { ascending: false })
+        .limit(1)
+        .maybeSingle(); // Use maybeSingle to handle null result without error
+
+      if (latestSalespeopleMonthError || !latestSalespeopleMonth?.month_year) {
+        console.error('Could not determine most recent month_year from salespeople table either:', latestSalespeopleMonthError);
+        return []; // Fallback to empty if no month_year found anywhere
+      }
+      targetMonthYear = latestSalespeopleMonth.month_year;
+      console.log("Using fallback targetMonthYear from salespeople table:", targetMonthYear);
+    } else if (kpiData?.month_year) { // Ensure kpiData and month_year exist
+      targetMonthYear = kpiData.month_year;
     }
-    targetMonthYear = kpiData.month_year;
   }
 
-  if (!targetMonthYear) {
+  if (!targetMonthYear) { // This check might be redundant if the above logic always sets it or returns
     console.error('Could not determine month_year for filtering daily sales.');
     return [];
   }

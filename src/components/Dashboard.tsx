@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Users, Target, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getKPIs, getSalespeople, getDailySales } from "@/lib/supabaseQueries";
-import type { KPI, Salesperson, DailySale } from "@/lib/supabaseQueries"; // Import types
+import { getKPIs, getAllSellerProfiles, getDailySales, SellerProfile } from "@/lib/supabaseQueries"; // Updated import
+import type { KPI, DailySale } from "@/lib/supabaseQueries"; // Removed Salesperson, SellerProfile already imported
 
 export const Dashboard = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'ranking' | 'charts' | 'analysis'>('overview');
@@ -33,9 +33,10 @@ export const Dashboard = () => {
     data: salespeopleData, 
     isLoading: salespeopleLoading, 
     error: salespeopleError 
-  } = useQuery<Salesperson[], Error, Salesperson[], ['salespeople', { month_year?: string }]>(
-    { queryKey: ['salespeople', activeFilters], queryFn: () => getSalespeople(activeFilters.month_year) }
-  );
+  } = useQuery<SellerProfile[], Error>({ // Updated type
+    queryKey: ['allSellerProfilesForDashboard'], // New queryKey
+    queryFn: getAllSellerProfiles // Updated queryFn
+  });
 
   const { 
     data: dailySalesData, 
@@ -133,8 +134,8 @@ export const Dashboard = () => {
       <Navigation />
       
       {/* Header Principal Melhorado */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-700 text-white pt-20 pb-6">
-        <div className="container mx-auto px-6">
+      <div className="bg-gradient-to-r from-green-600 to-emerald-700 text-white pt-28 pb-6"> {/* Padding Adjusted */}
+        <div className="container mx-auto px-6 max-w-screen-xl"> {/* Width Constrained */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <img 

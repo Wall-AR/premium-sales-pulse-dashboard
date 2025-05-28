@@ -23,12 +23,12 @@ export const LoginPage = () => {
     setLoading(false);
     if (authError) {
       if (authError.message === "Invalid login credentials") {
-        setError("Invalid email or password. Please try again.");
+        setError("E-mail ou senha inválidos. Por favor, tente novamente.");
       } else if (authError.message === "Email not confirmed") {
-        setError("Please confirm your email before logging in. Check your inbox for a confirmation link.");
+        setError("Por favor, confirme seu e-mail antes de fazer login. Verifique sua caixa de entrada para o link de confirmação.");
       }
       else {
-        setError(authError.message);
+        setError(authError.message); // Keep other potential Supabase errors as is, or map them
       }
     } else if (data.user) {
       navigate('/'); // Navigate to dashboard or home page on successful login
@@ -45,17 +45,17 @@ export const LoginPage = () => {
             alt="NutraManager Logo" 
             className="w-20 h-20 mx-auto mb-4"
           />
-          <CardTitle className="text-2xl font-bold text-emerald-700">Welcome Back</CardTitle>
-          <CardDescription>Log in to your NutraManager account.</CardDescription>
+          <CardTitle className="text-2xl font-bold text-emerald-700">Bem-vindo(a) de Volta</CardTitle>
+          <CardDescription>Faça login em sua conta NutraManager.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="voce@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -63,7 +63,7 @@ export const LoginPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -76,15 +76,15 @@ export const LoginPage = () => {
             </div>
             {error && <p className="text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={loading}>
-              {loading ? 'Logging In...' : 'Log In'}
+              {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="text-center">
           <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
+            Não tem uma conta?{' '}
             <Link to="/signup" className="font-medium text-emerald-600 hover:text-emerald-700">
-              Sign up
+              Cadastre-se
             </Link>
           </p>
         </CardFooter>
