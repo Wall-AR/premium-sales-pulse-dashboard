@@ -169,6 +169,18 @@ export async function getSaleRecordById(
   return { data, error };
 }
 
+export async function deleteSaleRecord(saleId: string): Promise<{ error: any }> {
+  const { error } = await supabase
+    .from('sales_records')
+    .delete()
+    .eq('id', saleId);
+
+  if (error) {
+    console.error(`Error deleting sale record ${saleId}:`, error);
+  }
+  return { error };
+}
+
 // Phase 1: Seller Management - New Interface and Query Function
 export interface SellerProfile {
   id: string; // Assuming 'id' exists on the 'salespeople' table and is a unique identifier for the seller.

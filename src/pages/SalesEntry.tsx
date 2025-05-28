@@ -1,20 +1,21 @@
 
-import { useNavigate, useParams } from "react-router-dom"; // Added useParams
-import { useEffect } from "react"; // Added useEffect
+import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react"; // Added useState
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; // Added useMutation, useQueryClient
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   getAllSellerProfiles, 
   SellerProfile, 
-  addSaleRecord, // Added
-  updateSaleRecord, // Added
-  getSaleRecordById, // Added
-  NewSaleRecordData, // Added
-  SaleRecord // Added
+  addSaleRecord,
+  updateSaleRecord,
+  getSaleRecordById,
+  deleteSaleRecord, // Added deleteSaleRecord
+  NewSaleRecordData,
+  SaleRecord 
 } from "@/lib/supabaseQueries";
-import { useAuth } from "@/contexts/AuthContext"; // Added
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Navigation } from "@/components/Navigation";
-import { ArrowLeft, Save, DollarSign, Loader2 } from "lucide-react"; // Added Loader2
+import { ArrowLeft, Save, DollarSign, Loader2, Trash2 } from "lucide-react"; // Added Trash2
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Zod Schema Definition
 const salesEntrySchema = z.object({
