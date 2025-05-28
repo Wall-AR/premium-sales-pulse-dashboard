@@ -1,6 +1,21 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom"; // Added useParams
+import { useEffect } from "react"; // Added useEffect
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; // Added useMutation, useQueryClient
+import { 
+  getAllSellerProfiles, 
+  SellerProfile, 
+  addSaleRecord, // Added
+  updateSaleRecord, // Added
+  getSaleRecordById, // Added
+  NewSaleRecordData, // Added
+  SaleRecord // Added
+} from "@/lib/supabaseQueries";
+import { useAuth } from "@/contexts/AuthContext"; // Added
+import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,41 +23,59 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Navigation } from "@/components/Navigation";
-import { salesData } from "@/data/salesData";
-import { ArrowLeft, Save, DollarSign } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Save, DollarSign, Loader2 } from "lucide-react"; // Added Loader2
+
+// Zod Schema Definition
+const salesEntrySchema = z.object({
+  salesperson_id: z.string().min(1, "Selecione um vendedor."),
+  amount: z.preprocess(
+    (a) => parseFloat(z.string().parse(a).replace(',', '.')), // Allow comma for decimal
+    z.number().positive({ message: "O valor da venda deve ser positivo." })
+  ),
+  sale_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de data inválido."),
+  is_new_customer: z.boolean().default(false),
+  order_number: z.string().min(1, "Número do pedido é obrigatório."),
+  customer_name: z.string().optional(),
+});
+
+export type SalesEntryFormData = z.infer<typeof salesEntrySchema>;
 
 const SalesEntry = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    salesperson: "",
-    amount: "",
-    date: new Date().toISOString().split('T')[0],
-    isNewCustomer: false,
-    orderNumber: "",
-    customerName: ""
+  const { 
+    register, 
+    handleSubmit, 
+    control, 
+    formState: { errors, isSubmitting },
+    reset 
+  } = useForm<SalesEntryFormData>({
+    resolver: zodResolver(salesEntrySchema),
+    defaultValues: {
+      salesperson_id: "",
+      amount: undefined, // Or 0, depending on desired initial state
+      sale_date: new Date().toISOString().split('T')[0],
+      is_new_customer: false,
+      order_number: "",
+      customer_name: "",
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const sellersQuery = useQuery<SellerProfile[], Error>({
+    queryKey: ['allSellerProfiles'],
+    queryFn: getAllSellerProfiles,
+  });
+
+  const onSubmit = (data: SalesEntryFormData) => {
+    console.log("Nova venda (react-hook-form):", data);
     
-    console.log("Nova venda:", formData);
-    
-    toast({
-      title: "Venda Registrada com Sucesso!",
-      description: `R$ ${parseFloat(formData.amount).toLocaleString('pt-BR')} vendidos por ${formData.salesperson}`,
+    // Find salesperson name for toast
+    const salespersonName = sellersQuery.data?.find(s => s.id === data.salesperson_id)?.name || "Desconhecido";
+
+    toast.success("Venda Registrada com Sucesso!", {
+      description: `R$ ${data.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} vendidos por ${salespersonName}`,
       duration: 3000,
     });
-
-    setFormData({
-      salesperson: "",
-      amount: "",
-      date: new Date().toISOString().split('T')[0],
-      isNewCustomer: false,
-      orderNumber: "",
-      customerName: ""
-    });
+    reset(); // Reset form to default values
   };
 
   return (
@@ -74,20 +107,101 @@ const SalesEntry = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="salesperson" className="text-green-700 font-medium">Vendedor *</Label>
-                    <Select value={formData.salesperson} onValueChange={(value) => setFormData({...formData, salesperson: value})}>
-                      <SelectTrigger className="border-green-200 focus:border-green-500">
-                        <SelectValue placeholder="Selecione o vendedor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {salesData.salespeople.map((person) => (
-                          <SelectItem key={person.name} value={person.name}>
-                            {person.name}
-                          </SelectItem>
-                        ))}
+                    <Label htmlFor="salesperson_id" className="text-green-700 font-medium">Vendedor *</Label>
+                    <Controller
+                      name="salesperson_id"
+                      control={control}
+                      render={({ field }) => (
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                          disabled={sellersQuery.isLoading || sellersQuery.isError}
+                        >
+                          <SelectTrigger className="border-green-200 focus:border-green-500">
+                            <SelectValue placeholder={
+                              sellersQuery.isLoading ? "Carregando vendedores..." : 
+                              sellersQuery.isError ? "Erro ao carregar" : 
+                              "Selecione o vendedor"
+                            } />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sellersQuery.data?.map((person) => (
+                              <SelectItem key={person.id} value={person.id}>
+                                {person.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.salesperson_id && <p className="text-xs text-red-500 mt-1">{errors.salesperson_id.message}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="amount" className="text-green-700 font-medium">Valor da Venda (R$) *</Label>
+                    <Input
+                      id="amount"
+                      type="text" // Use text to allow comma, preprocess will handle parseFloat
+                      inputMode="decimal" // For better mobile UX
+                      placeholder="0,00"
+                      {...register("amount")}
+                      className={`text-lg font-semibold border-green-200 focus:border-green-500 ${errors.amount ? 'border-red-500' : ''}`}
+                    />
+                    {errors.amount && <p className="text-xs text-red-500 mt-1">{errors.amount.message}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="sale_date" className="text-green-700 font-medium">Data da Venda *</Label>
+                    <Input
+                      id="sale_date"
+                      type="date"
+                      {...register("sale_date")}
+                      className={`border-green-200 focus:border-green-500 ${errors.sale_date ? 'border-red-500' : ''}`}
+                    />
+                    {errors.sale_date && <p className="text-xs text-red-500 mt-1">{errors.sale_date.message}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="order_number" className="text-green-700 font-medium">Número do Pedido *</Label>
+                    <Input
+                      id="order_number"
+                      placeholder="ex: PED-2025-001"
+                      {...register("order_number")}
+                      className={`border-green-200 focus:border-green-500 ${errors.order_number ? 'border-red-500' : ''}`}
+                    />
+                    {errors.order_number && <p className="text-xs text-red-500 mt-1">{errors.order_number.message}</p>}
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="customer_name" className="text-green-700 font-medium">Nome do Cliente</Label>
+                    <Input
+                      id="customer_name"
+                      placeholder="Nome do cliente"
+                      {...register("customer_name")}
+                      className={`border-green-200 focus:border-green-500 ${errors.customer_name ? 'border-red-500' : ''}`}
+                    />
+                    {errors.customer_name && <p className="text-xs text-red-500 mt-1">{errors.customer_name.message}</p>}
+                  </div>
+
+                  <div className="md:col-span-2 flex items-center space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <Controller
+                      name="is_new_customer"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="is_new_customer"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="border-green-300 data-[state=checked]:bg-green-600"
+                        />
+                      )}
+                    />
+                    <Label htmlFor="is_new_customer" className="text-green-700 font-medium mb-0">
+                      Este é um cliente novo
+                    </Label>
                       </SelectContent>
                     </Select>
                   </div>
@@ -166,9 +280,13 @@ const SalesEntry = () => {
                   <Button
                     type="submit"
                     className="bg-green-600 hover:bg-green-700 text-white px-8"
-                    disabled={!formData.salesperson || !formData.amount || !formData.orderNumber}
+                    disabled={isSubmitting || sellersQuery.isLoading}
                   >
-                    <Save className="w-4 h-4 mr-2" />
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> 
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
                     Salvar Venda
                   </Button>
                 </div>

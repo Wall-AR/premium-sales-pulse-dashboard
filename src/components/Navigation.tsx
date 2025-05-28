@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
-import { BarChart3, Plus, Settings, Home, User } from "lucide-react";
+import { Plus, Settings, Home, Users } from "lucide-react"; // Removed BarChart3, User and added Users
 
 export const Navigation = () => {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export const Navigation = () => {
   const navItems = [
     { path: "/", icon: Home, label: "Dashboard", color: "green" },
     { path: "/sales-entry", icon: Plus, label: "Nova Venda", color: "emerald" },
+    { path: "/seller-management", icon: Users, label: "Vendedores", color: "green" }, // New item
     { path: "/configuration", icon: Settings, label: "Configurações", color: "green" }
   ];
 
@@ -20,10 +21,10 @@ export const Navigation = () => {
           <div className="flex items-center space-x-2 pr-4 border-r border-green-200">
             <img 
               src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
-              alt="NutraScore" 
+              alt="NutraManager" 
               className="h-6 w-auto"
             />
-            <span className="font-bold text-green-700 text-sm hidden sm:inline">NutraScore</span>
+            <span className="font-bold text-green-700 text-sm hidden sm:inline">NutraManager</span>
           </div>
           
           <div className="flex items-center space-x-2">

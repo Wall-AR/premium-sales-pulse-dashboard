@@ -139,11 +139,11 @@ export const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <img 
                 src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
-                alt="NutraScore Logo" 
+                alt="NutraManager Logo" 
                 className="h-12 w-auto"
               />
               <div>
-                <h1 className="text-3xl font-bold">NutraScore Dashboard</h1>
+                <h1 className="text-3xl font-bold">NutraManager Dashboard</h1>
                 <p className="text-green-100 mt-1">Sistema Avançado de Gestão de Vendas e Performance</p>
               </div>
             </div>
