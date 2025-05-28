@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { addHistoryLogEntry, NewHistoryLogEntryData } from './historyLog'; 
 
 interface KPI {
   total_sold: number;
@@ -211,12 +212,13 @@ export async function getAllSellerProfiles(): Promise<SellerProfile[]> {
   return data || [];
 }
 
-export type NewSellerProfileData = Omit<SellerProfile, 'id'>; // Keep 'user_id' if it's part of SellerProfile for future use
+export type NewSellerProfileData = Omit<SellerProfile, 'id'>; 
 
-export async function addSellerProfile(sellerData: NewSellerProfileData): Promise<{ data: SellerProfile | null, error: any }> {
-  // This function inserts into the 'salespeople' table.
-  // It assumes Supabase will auto-generate the 'id' (PK).
-  // 'user_id' would be passed in sellerData if it were part of NewSellerProfileData and the table schema.
+export async function addSellerProfile(
+  sellerData: NewSellerProfileData,
+  userId: string,
+  userEmail: string
+): Promise<{ data: SellerProfile | null, error: any }> {
   
   // Ensure photo_url is explicitly null if not provided or an empty string, to avoid DB constraint issues.
   const dataToInsert = {
@@ -235,12 +237,30 @@ export async function addSellerProfile(sellerData: NewSellerProfileData): Promis
     return { data: null, error };
   }
 
+  if (data) {
+    // Log history
+    const logEntry: NewHistoryLogEntryData = {
+      user_id: userId,
+      user_email: userEmail,
+      action_type: 'SELLER_CREATED',
+      record_type: 'seller',
+      record_id: data.id, // data is the created seller profile
+      details: `Vendedor "${data.name}" (ID: ${data.id}) criado.`,
+    };
+    const logResult = await addHistoryLogEntry(logEntry);
+    if (logResult.error) {
+      console.error("Failed to add history log for SELLER_CREATED:", logResult.error);
+      // Do not block the main operation due to logging failure
+    }
+  }
+
   return { data, error: null };
 }
 
 export async function updateSellerProfile(
   sellerId: string, 
   sellerData: Partial<NewSellerProfileData>
+  // userId and userEmail will be added in a subsequent step for this function
 ): Promise<{ data: SellerProfile | null, error: any }> {
   // Ensure photo_url is explicitly null if an empty string is passed for an update
   const dataToUpdate = { ...sellerData };
@@ -260,10 +280,17 @@ export async function updateSellerProfile(
     return { data: null, error };
   }
 
+  // The erroneous logging block that was here has been removed.
+  // Correct logging for deleteSellerProfile will be added in a subsequent step
+  // if it's part of the requirements for that function.
+
   return { data, error: null };
 }
 
-export async function deleteSellerProfile(sellerId: string): Promise<{ error: any }> {
+export async function deleteSellerProfile(
+  sellerId: string
+  // userId, userEmail, and sellerName will be added in a subsequent step for this function
+): Promise<{ error: any }> {
   const { error } = await supabase
     .from('salespeople')
     .delete()
