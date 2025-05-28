@@ -18,9 +18,10 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   PlusCircle, 
   UserCircle, 
-  AlertTriangle as PageAlertTriangle, // Renamed to avoid conflict with AlertDialog.AlertTriangle
+  AlertTriangle as PageAlertTriangle, 
   Users, 
-  Pencil, 
+  Pencil,
+  ArrowLeft, // Added ArrowLeft
   Trash2 // Added Trash2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -33,11 +34,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger, // Not directly used if controlling open state manually
+  AlertDialogTrigger, 
 } from "@/components/ui/alert-dialog";
+import { useNavigate } from 'react-router-dom'; // Added useNavigate
 
 
 const SellerManagementPage = () => {
+  const navigate = useNavigate(); // Added navigate
   const queryClient = useQueryClient();
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false); 
   const [editingSeller, setEditingSeller] = useState<SellerProfile | null>(null);
@@ -203,7 +206,7 @@ const SellerManagementPage = () => {
     );
   }
 
-  if (isError || !sellers) {
+  if (isError) {
     return (
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <Card className="shadow-lg">
@@ -215,17 +218,10 @@ const SellerManagementPage = () => {
              <CardDescription>Ocorreu um erro ao carregar os dados dos vendedores.</CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+            <PageAlertTriangle className="mx-auto h-12 w-12 text-red-500" /> {/* Changed to PageAlertTriangle */}
             <p className="mt-4 text-red-600">
-              Não foi possível buscar os vendedores. Verifique sua conexão ou tente novamente mais tarde.
+              Erro ao buscar vendedores: {error?.message || "Detalhes do erro não disponíveis."}
             </p>
-            {error && <p className="text-sm text-gray-500 mt-2">Detalhes: {error.message}</p>}
-             {/* This might indicate the 'seller_profiles' table doesn't exist as per our assumption */}
-            {error?.message.includes("relation \"seller_profiles\" does not exist") && (
-              <p className="mt-2 text-sm text-orange-500 bg-orange-50 p-3 rounded-md">
-                Nota: A tabela 'seller_profiles' parece não existir no banco de dados. Esta página requer essa tabela para funcionar corretamente.
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>
@@ -234,6 +230,16 @@ const SellerManagementPage = () => {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 flex"> 
+        <Button
+          variant="outline"
+          onClick={() => navigate("/")}
+          className="border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800 flex items-center"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar ao Dashboard
+        </Button>
+      </div>
       <Card className="shadow-lg border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center">
@@ -250,11 +256,11 @@ const SellerManagementPage = () => {
           </Button>
         </CardHeader>
         <CardContent className="pt-6">
-          {sellers.length === 0 ? (
+          {!isLoading && !isError && sellers && sellers.length === 0 ? (
             <div className="text-center py-10">
               <UserCircle className="mx-auto h-16 w-16 text-gray-400" />
-              <h3 className="mt-4 text-lg font-medium text-gray-700">Nenhum vendedor encontrado</h3>
-              <p className="mt-1 text-sm text-gray-500">Comece adicionando um novo vendedor.</p>
+              <h3 className="mt-4 text-lg font-medium text-gray-700">Nenhum vendedor cadastrado.</h3>
+              <p className="mt-1 text-sm text-gray-500">Clique em 'Adicionar Novo Vendedor' para começar.</p>
             </div>
           ) : (
             <Table>

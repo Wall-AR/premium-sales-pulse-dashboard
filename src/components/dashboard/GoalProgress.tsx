@@ -1,10 +1,9 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Target, ShieldCheck, Star, Info } from "lucide-react"; // Removed Loader2
-import type { Salesperson } from "@/lib/supabaseQueries";
+import { Target, Info } from "lucide-react"; // Removed ShieldCheck, Star
+import type { SellerProfile } from "@/lib/supabaseQueries"; // Updated type to SellerProfile
 
 interface GoalProgressProps {
-  salespeople: Salesperson[] | null | undefined;
+  salespeople: SellerProfile[] | null | undefined; // Updated prop type
 }
 
 const GoalProgressSkeleton: React.FC = () => {
@@ -43,21 +42,22 @@ export const GoalProgress = ({ salespeople }: GoalProgressProps) => {
         </CardHeader>
         <CardContent className="p-6 text-center text-gray-500">
           <Info className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-          Nenhum dado de progresso disponível.
+          Nenhum dado de vendedor disponível para calcular o progresso.
         </CardContent>
       </Card>
     );
   }
 
-  const totalSold = salespeople.reduce((sum, person) => sum + (person.sold ?? 0), 0);
-  const totalGoal = salespeople.reduce((sum, person) => sum + (person.goal ?? 0), 1); // Avoid division by zero
-  const progressPercentage = totalGoal > 0 ? (totalSold / totalGoal) * 100 : 0;
-
-  const challengesMet = salespeople.filter(p => p.challenge).length;
-  const megasMet = salespeople.filter(p => p.mega).length;
+  // Since SellerProfile does not contain performance data (sold, goal, challenge, mega),
+  // we'll display 0 or "N/A" for these metrics.
+  const totalSold = 0;
+  const totalGoal = 0; 
+  const progressPercentage = 0;
+  const challengesMet = 0; // Not available in SellerProfile
+  const megasMet = 0; // Not available in SellerProfile
 
   // Calculate the stroke dasharray for the circle
-  const radius = 70; // Adjusted radius for a cleaner look with new elements
+  const radius = 70; 
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = `${(progressPercentage / 100) * circumference} ${circumference}`;
 
@@ -114,18 +114,19 @@ export const GoalProgress = ({ salespeople }: GoalProgressProps) => {
             <div className="text-center">
               <div className="flex items-center justify-center text-blue-600">
                 <ShieldCheck className="w-5 h-5 mr-1.5" />
-                <span className="text-xl font-bold">{challengesMet}</span>
+                <span className="text-xl font-bold">N/A</span> 
               </div>
               <p className="text-xs text-gray-500">Desafios Batidos</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center text-purple-600">
-                <Star className="w-5 h-5 mr-1.5" />
-                <span className="text-xl font-bold">{megasMet}</span>
+                <Star className="w-5 h-5 mr-1.5 text-gray-400" /> {/* Icon kept, but value N/A */}
+                <span className="text-xl font-bold">N/A</span>
               </div>
               <p className="text-xs text-gray-500">Megas Batidas</p>
             </div>
           </div>
+          <p className="text-xs text-center text-gray-400 mt-3">Dados de performance detalhados indisponíveis.</p>
         </div>
       </CardContent>
     </Card>
