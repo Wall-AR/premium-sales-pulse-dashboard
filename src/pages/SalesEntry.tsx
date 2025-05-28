@@ -213,8 +213,6 @@ const SalesEntry = () => {
                     <Label htmlFor="is_new_customer" className="text-green-700 font-medium mb-0">
                       Este é um cliente novo
                     </Label>
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   <div className="space-y-2">

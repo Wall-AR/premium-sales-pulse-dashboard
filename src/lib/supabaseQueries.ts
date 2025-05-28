@@ -259,8 +259,9 @@ export async function addSellerProfile(
 
 export async function updateSellerProfile(
   sellerId: string, 
-  sellerData: Partial<NewSellerProfileData>
-  // userId and userEmail will be added in a subsequent step for this function
+  sellerData: Partial<NewSellerProfileData>,
+  userId: string, // Added
+  userEmail: string // Added
 ): Promise<{ data: SellerProfile | null, error: any }> {
   // Ensure photo_url is explicitly null if an empty string is passed for an update
   const dataToUpdate = { ...sellerData };
