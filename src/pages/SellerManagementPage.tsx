@@ -38,7 +38,6 @@ import {
   AlertDialogTrigger, 
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from 'react-router-dom'; 
-import { useAuth } from '@/contexts/AuthContext'; // Ensure useAuth is imported
 
 const SellerManagementPage = () => {
   const navigate = useNavigate(); 
