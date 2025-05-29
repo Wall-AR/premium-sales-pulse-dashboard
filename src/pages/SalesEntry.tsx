@@ -93,7 +93,7 @@ const SalesEntry = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
-      <div className="container mx-auto px-6 py-20">
+      <div className="container mx-auto px-6 py-20 mt-20"> {/* Added mt-20 */}
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center mb-8">
             <Button

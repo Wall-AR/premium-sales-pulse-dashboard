@@ -125,8 +125,8 @@ export interface SaleRecord {
 export type NewSaleRecordData = Omit<SaleRecord, 'id' | 'created_at' | 'updated_at' | 'updated_by'>;
 
 export async function addSaleRecord(
-  // The actual data passed to this function will have created_by already merged.
-  saleData: NewSaleRecordData 
+  saleData: NewSaleRecordData,
+  userEmail: string // Added userEmail for logging
 ): Promise<{ data: SaleRecord | null; error: any }> {
   const { data, error } = await supabase
     .from('sales_records')
@@ -136,14 +136,27 @@ export async function addSaleRecord(
 
   if (error) {
     console.error('Error adding sale record:', error);
+  } else if (data) { // If sale record creation was successful and data is available
+    const logEntry: NewHistoryLogEntryData = {
+      user_id: saleData.created_by, 
+      user_email: userEmail,       
+      action_type: 'SALE_CREATED',
+      record_type: 'sale',
+      record_id: data.id,      
+      details: `Venda (Nº Pedido: ${data.order_number}, Valor: ${data.amount}) registrada.`
+    };
+    const logResult = await addHistoryLogEntry(logEntry);
+    if (logResult.error) {
+      console.error("Failed to add history log for SALE_CREATED:", logResult.error);
+    }
   }
   return { data, error };
 }
 
 export async function updateSaleRecord(
   saleId: string,
-  // The actual data passed will have updated_by already merged.
-  saleData: Partial<Omit<NewSaleRecordData, 'created_by' | 'salesperson_id'>> & { updated_by: string } 
+  saleData: Partial<Omit<NewSaleRecordData, 'created_by' | 'salesperson_id'>> & { updated_by: string },
+  userEmail: string // Added userEmail for logging
 ): Promise<{ data: SaleRecord | null; error: any }> {
   // `created_by` and `salesperson_id` are typically not changed on update.
   // `salesperson_id` could be updatable if requirements allow, but often it's fixed.
@@ -164,6 +177,19 @@ export async function updateSaleRecord(
 
   if (error) {
     console.error(`Error updating sale record ${saleId}:`, error);
+  } else if (data) { // If sale record update was successful
+    const logEntry: NewHistoryLogEntryData = {
+      user_id: saleData.updated_by, // updated_by is the userId
+      user_email: userEmail,        // Passed as a new parameter
+      action_type: 'SALE_UPDATED',
+      record_type: 'sale',
+      record_id: data.id,       // 'data' is the successfully updated sale
+      details: `Venda (Nº Pedido: ${data.order_number}, Valor: ${data.amount}) atualizada.`
+    };
+    const logResult = await addHistoryLogEntry(logEntry);
+    if (logResult.error) {
+      console.error("Failed to add history log for SALE_UPDATED:", logResult.error);
+    }
   }
   return { data, error };
 }
@@ -214,15 +240,18 @@ export async function getAllSellerProfiles(): Promise<SellerProfile[]> {
   // For now, we select directly, assuming the table can provide these profile details.
   const { data, error } = await supabase
     .from('salespeople') // Changed from 'seller_profiles'
-    .select('id, name, email, status, photo_url') // Ensure these columns exist on 'salespeople' table
+    .select('*') // Changed to select all columns
     .order('name', { ascending: true });
+  
+  console.log('[getAllSellerProfiles] Raw Supabase data:', data);
+  console.error('[getAllSellerProfiles] Supabase error:', error); // Use console.error for errors
 
   if (error) {
-    console.error('Error fetching all seller profiles from salespeople table:', error);
+    console.error('Error fetching all seller profiles (select *):', error.message); // More specific log
     return [];
   }
-
-  return data || [];
+  // Ensure data is an array before returning, or default to empty array
+  return Array.isArray(data) ? data : []; 
 }
 
 export type NewSellerProfileData = Omit<SellerProfile, 'id'>; 
@@ -294,16 +323,31 @@ export async function updateSellerProfile(
     return { data: null, error };
   }
 
-  // The erroneous logging block that was here has been removed.
-  // Correct logging for deleteSellerProfile will be added in a subsequent step
-  // if it's part of the requirements for that function.
+  if (data) { // Check if data is not null (successful update)
+    // Log history
+    const logEntry: NewHistoryLogEntryData = {
+      user_id: userId,
+      user_email: userEmail,
+      action_type: 'SELLER_UPDATED',
+      record_type: 'seller',
+      record_id: data.id, // 'data' here is the successfully updated seller
+      details: `Vendedor "${data.name}" (ID: ${data.id}) atualizado.`
+    };
+    const logResult = await addHistoryLogEntry(logEntry);
+    if (logResult.error) {
+      console.error("Failed to add history log for SELLER_UPDATED:", logResult.error);
+      // Do not block the main operation due to logging failure
+    }
+  }
 
   return { data, error: null };
 }
 
 export async function deleteSellerProfile(
-  sellerId: string
-  // userId, userEmail, and sellerName will be added in a subsequent step for this function
+  sellerId: string,
+  userId: string, // Added
+  userEmail: string, // Added
+  sellerName?: string // Added
 ): Promise<{ error: any }> {
   const { error } = await supabase
     .from('salespeople')
@@ -315,7 +359,22 @@ export async function deleteSellerProfile(
     return { error };
   }
 
-  return { error: null };
+  // If delete was successful, log history
+  const logEntry: NewHistoryLogEntryData = {
+    user_id: userId,
+    user_email: userEmail,
+    action_type: 'SELLER_DELETED',
+    record_type: 'seller',
+    record_id: sellerId,
+    details: sellerName ? `Vendedor "${sellerName}" (ID: ${sellerId}) excluído.` : `Vendedor (ID: ${sellerId}) excluído.`
+  };
+  const logResult = await addHistoryLogEntry(logEntry);
+  if (logResult.error) {
+    console.error("Failed to add history log for SELLER_DELETED:", logResult.error);
+    // Do not block the main operation due to logging failure, but the original error (if any) for delete is already handled.
+  }
+
+  return { error: null }; // Successfully deleted seller profile
 }
 
 
