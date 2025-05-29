@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext'; // Added useAuth
 import { 
   getAllSellerProfiles, 
   SellerProfile, 
@@ -36,16 +37,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger, 
 } from "@/components/ui/alert-dialog";
-import { useNavigate } from 'react-router-dom'; // Added useNavigate
-
+import { useNavigate } from 'react-router-dom'; 
+import { useAuth } from '@/contexts/AuthContext'; // Ensure useAuth is imported
 
 const SellerManagementPage = () => {
-  const navigate = useNavigate(); // Added navigate
+  const navigate = useNavigate(); 
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth(); 
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false); 
   const [editingSeller, setEditingSeller] = useState<SellerProfile | null>(null);
   const [sellerToDelete, setSellerToDelete] = useState<SellerProfile | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isProcessingSubmit, setIsProcessingSubmit] = useState(false); 
 
 
   const { data: sellers, isLoading, error, isError } = useQuery<SellerProfile[], Error>({
@@ -54,41 +57,20 @@ const SellerManagementPage = () => {
   });
 
   const addSellerMutation = useMutation({
-    mutationFn: addSellerProfile,
-    onSuccess: (response) => {
-      if (response.error) {
-        toast.error(`Erro ao adicionar vendedor: ${response.error.message || 'Erro desconhecido.'}`);
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['allSellerProfiles'] });
-        setIsAddEditDialogOpen(false);
-        toast.success('Vendedor adicionado com sucesso!');
-      }
-    },
-    onError: (err: Error) => {
-      toast.error(`Falha ao adicionar vendedor: ${err.message}`);
-    },
+    mutationFn: (params: { sellerData: NewSellerProfileData; userId: string; userEmail: string }) => 
+      addSellerProfile(params.sellerData, params.userId, params.userEmail),
+    // onSuccess/onError handled in handleDialogSubmit
   });
 
   const updateSellerMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<NewSellerProfileData> }) => 
-      updateSellerProfile(id, data),
-    onSuccess: (response) => {
-      if (response.error) {
-        toast.error(`Erro ao atualizar vendedor: ${response.error.message || 'Erro desconhecido.'}`);
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['allSellerProfiles'] });
-        setIsAddEditDialogOpen(false);
-        setEditingSeller(null); 
-        toast.success('Vendedor atualizado com sucesso!');
-      }
-    },
-    onError: (err: Error) => {
-      toast.error(`Falha ao atualizar vendedor: ${err.message}`);
-    },
+    mutationFn: (params: { id: string; data: Partial<NewSellerProfileData>; userId: string; userEmail: string }) =>
+      updateSellerProfile(params.id, params.data, params.userId, params.userEmail),
+    // onSuccess/onError handled in handleDialogSubmit
   });
-
+  
   const deleteSellerMutation = useMutation({
-    mutationFn: deleteSellerProfile,
+    mutationFn: (params: { sellerId: string; userId: string; userEmail: string; sellerName?: string }) =>
+      deleteSellerProfile(params.sellerId, params.userId, params.userEmail, params.sellerName),
     onSuccess: (response) => {
       if (response.error) {
          toast.error(`Erro ao excluir vendedor: ${response.error.message || 'Erro desconhecido.'}`);
@@ -107,10 +89,100 @@ const SellerManagementPage = () => {
   });
 
   const handleDialogSubmit = async (formData: SellerFormData) => {
-    if (editingSeller) {
-      await updateSellerMutation.mutateAsync({ id: editingSeller.id, data: formData });
-    } else {
-      await addSellerMutation.mutateAsync(formData as NewSellerProfileData);
+    setIsProcessingSubmit(true);
+    if (!currentUser) {
+      toast.error("Usuário não autenticado. Por favor, faça login novamente.");
+      setIsProcessingSubmit(false);
+      return;
+    }
+
+    const { photo_file: photoFile, ...profileData } = formData;
+    const actualPhotoFile = photoFile?.[0];
+
+    try {
+      if (editingSeller) {
+        // Edit logic
+        let newPhotoUrl = editingSeller.photo_url;
+        let oldPhotoPathToDelete: string | null = null;
+
+        if (actualPhotoFile) {
+          toast.info("Enviando nova foto...");
+          const uploadedUrl = await uploadSellerPhoto(actualPhotoFile, editingSeller.id);
+          if (uploadedUrl) {
+            if (editingSeller.photo_url && editingSeller.photo_url !== uploadedUrl) {
+              oldPhotoPathToDelete = editingSeller.photo_url;
+            }
+            newPhotoUrl = uploadedUrl;
+            toast.success("Foto enviada com sucesso!");
+          } else {
+            toast.error("Falha ao enviar a nova foto. O perfil será atualizado sem alterar a foto.");
+          }
+        }
+        
+        const dataToUpdate = { ...profileData, photo_url: newPhotoUrl };
+        const updateResult = await updateSellerMutation.mutateAsync({ 
+          id: editingSeller.id, 
+          data: dataToUpdate, 
+          userId: currentUser.id, 
+          userEmail: currentUser.email || "" 
+        });
+
+        if (updateResult.error) {
+          toast.error(`Erro ao atualizar vendedor: ${updateResult.error.message}`);
+        } else {
+          if (oldPhotoPathToDelete) {
+            try {
+              await deleteSellerPhoto(oldPhotoPathToDelete);
+              toast.info("Foto antiga removida.");
+            } catch (deleteError: any) {
+              toast.warning(`Vendedor atualizado, mas falha ao remover foto antiga: ${deleteError.message}`);
+            }
+          }
+          toast.success('Vendedor atualizado com sucesso!');
+          queryClient.invalidateQueries({ queryKey: ['allSellerProfiles'] });
+          setIsAddEditDialogOpen(false);
+          setEditingSeller(null);
+        }
+      } else {
+        // Add new seller logic
+        const addResult = await addSellerMutation.mutateAsync({ 
+          sellerData: profileData as NewSellerProfileData, 
+          userId: currentUser.id, 
+          userEmail: currentUser.email || "" 
+        });
+
+        if (addResult.error) {
+          toast.error(`Erro ao adicionar vendedor: ${addResult.error.message}`);
+        } else if (addResult.data && actualPhotoFile) {
+          toast.info("Enviando foto...");
+          const newPublicUrl = await uploadSellerPhoto(actualPhotoFile, addResult.data.id);
+          if (newPublicUrl) {
+            const photoUpdateResult = await updateSellerMutation.mutateAsync({
+              id: addResult.data.id,
+              data: { photo_url: newPublicUrl },
+              userId: currentUser.id,
+              userEmail: currentUser.email || "",
+            });
+            if (photoUpdateResult.error) {
+              toast.error(`Vendedor adicionado, mas falha ao salvar URL da foto: ${photoUpdateResult.error.message}`);
+            } else {
+              toast.success("Vendedor e foto adicionados com sucesso!");
+            }
+          } else {
+            toast.warning("Vendedor adicionado, mas falha ao enviar foto.");
+          }
+          queryClient.invalidateQueries({ queryKey: ['allSellerProfiles'] });
+          setIsAddEditDialogOpen(false);
+        } else if (addResult.data) { // No photo file, but add was successful
+          toast.success("Vendedor adicionado com sucesso!");
+          queryClient.invalidateQueries({ queryKey: ['allSellerProfiles'] });
+          setIsAddEditDialogOpen(false);
+        }
+      }
+    } catch (e: any) {
+      toast.error(`Ocorreu um erro inesperado: ${e.message}`);
+    } finally {
+      setIsProcessingSubmit(false);
     }
   };
   
@@ -137,8 +209,15 @@ const SellerManagementPage = () => {
   };
 
   const confirmDeleteSeller = () => {
-    if (sellerToDelete) {
-      deleteSellerMutation.mutate(sellerToDelete.id);
+    if (sellerToDelete && currentUser) {
+      deleteSellerMutation.mutate({
+        sellerId: sellerToDelete.id,
+        userId: currentUser.id,
+        userEmail: currentUser.email || "",
+        sellerName: sellerToDelete.name,
+      });
+    } else if (!currentUser) {
+      toast.error("Autenticação necessária para excluir.");
     }
   };
 
@@ -251,7 +330,7 @@ const SellerManagementPage = () => {
                 <CardDescription>Adicione, visualize e gerencie os perfis dos vendedores.</CardDescription>
             </div>
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md transition-all">
+          <Button onClick={handleOpenAddDialog} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md transition-all">
             <PlusCircle className="mr-2 h-5 w-5" /> Adicionar Novo Vendedor
           </Button>
         </CardHeader>
@@ -303,6 +382,37 @@ const SellerManagementPage = () => {
           )}
         </CardContent>
       </Card>
+
+      <AddSellerDialog 
+        isOpen={isAddEditDialogOpen} 
+        onOpenChange={handleAddEditDialogClose}
+        onSubmitHandler={handleDialogSubmit}
+        isSubmitting={isProcessingSubmit}
+        editingSeller={editingSeller}
+      />
+
+      {sellerToDelete && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir o vendedor "{sellerToDelete.name}"? Esta ação não poderá ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDeleteSeller}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={deleteSellerMutation.isLoading}
+              >
+                {deleteSellerMutation.isLoading ? "Excluindo..." : "Excluir"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };
