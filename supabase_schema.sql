@@ -84,3 +84,80 @@ ALTER TABLE public.activity_log ENABLE ROW LEVEL SECURITY;
 --   ON public.activity_log FOR INSERT
 --   WITH CHECK (auth.uid() = user_id AND auth.jwt()->>'email' = user_email);
 -- (Consider if users should directly log their own actions or if this should be backend-driven)
+
+--
+-- RLS Policies
+--
+-- Note: These are basic policies to get the application functional.
+-- Review and restrict them further based on your exact security requirements.
+--
+
+-- Policies for 'salespeople' table
+-- Assumes RLS is already enabled for this table.
+CREATE POLICY "Allow authenticated users to select all salespeople"
+  ON public.salespeople FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Allow authenticated users to insert salespeople"
+  ON public.salespeople FOR INSERT
+  TO authenticated
+  WITH CHECK (true); -- Or add specific checks if needed, e.g., based on user role
+
+CREATE POLICY "Allow authenticated users to update salespeople" 
+  ON public.salespeople FOR UPDATE
+  TO authenticated
+  USING (true) -- Allows updating any record if you can select it
+  WITH CHECK (true); -- Or add specific checks
+
+CREATE POLICY "Allow authenticated users to delete salespeople"
+  ON public.salespeople FOR DELETE
+  TO authenticated
+  USING (true); -- Allows deleting any record if you can select it
+
+-- Policies for 'kpis' table
+-- Assumes RLS is already enabled for this table.
+CREATE POLICY "Allow authenticated users to select all kpis"
+  ON public.kpis FOR SELECT
+  TO authenticated
+  USING (true);
+-- Add INSERT/UPDATE/DELETE policies for KPIs if/when admin functionality for managing KPIs is built.
+
+-- Policies for 'sales_records' table
+-- Assumes RLS is already enabled for this table.
+CREATE POLICY "Allow users to select their own sales records"
+  ON public.sales_records FOR SELECT
+  TO authenticated
+  USING (auth.uid() = created_by);
+
+CREATE POLICY "Allow users to insert their own sales records"
+  ON public.sales_records FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = created_by);
+
+CREATE POLICY "Allow users to update their own sales records"
+  ON public.sales_records FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = created_by) -- User can only update if they were the creator
+  WITH CHECK (auth.uid() = updated_by); -- And they must set themselves as the updater
+
+CREATE POLICY "Allow users to delete their own sales records"
+  ON public.sales_records FOR DELETE
+  TO authenticated
+  USING (auth.uid() = created_by);
+
+-- Policies for 'activity_log' table
+-- Assumes RLS is already enabled for this table.
+CREATE POLICY "Allow users to insert their own activity logs"
+  ON public.activity_log FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+-- For SELECTING from activity_log, you'll likely want more restrictive policies,
+-- e.g., only allowing admins or specific roles to view the full log.
+-- Example: (Requires an admin role check function or similar)
+-- CREATE POLICY "Allow admin users to select all activity logs"
+--   ON public.activity_log FOR SELECT
+--   TO authenticated
+--   USING (is_admin(auth.uid())); -- Replace is_admin with your actual role check
+-- For now, no general SELECT policy is added to keep it more secure by default.
