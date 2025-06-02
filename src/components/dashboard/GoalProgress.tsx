@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Target, Info } from "lucide-react"; // Removed ShieldCheck, Star
+import { Target, Info, ShieldCheck, Star } from "lucide-react";
 import type { SellerProfile } from "@/lib/supabaseQueries"; // Updated type to SellerProfile
 
 interface GoalProgressProps {
