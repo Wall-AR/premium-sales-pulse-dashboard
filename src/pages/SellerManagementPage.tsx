@@ -107,15 +107,16 @@ const SellerManagementPage = () => {
 
         if (actualPhotoFile) {
           toast.info("Enviando nova foto...");
-          const uploadedUrl = await uploadSellerPhoto(actualPhotoFile, editingSeller.id);
-          if (uploadedUrl) {
-            if (editingSeller.photo_url && editingSeller.photo_url !== uploadedUrl) {
+          const uploadResult = await uploadSellerPhoto(actualPhotoFile, editingSeller.id);
+          if (uploadResult.publicUrl) { // Check for the actual URL string
+            if (editingSeller.photo_url && editingSeller.photo_url !== uploadResult.publicUrl) {
               oldPhotoPathToDelete = editingSeller.photo_url;
             }
-            newPhotoUrl = uploadedUrl;
+            newPhotoUrl = uploadResult.publicUrl; // Use the publicUrl string
             toast.success("Foto enviada com sucesso!");
           } else {
-            toast.error("Falha ao enviar a nova foto. O perfil será atualizado sem alterar a foto.");
+            toast.error(`Falha ao enviar a nova foto: ${uploadResult.error?.message || 'Erro desconhecido no upload.'} O perfil será atualizado sem alterar a foto.`);
+            // newPhotoUrl remains editingSeller.photo_url (or its initial value)
           }
         }
 
@@ -155,11 +156,11 @@ const SellerManagementPage = () => {
           toast.error(`Erro ao adicionar vendedor: ${addResult.error.message}`);
         } else if (addResult.data && actualPhotoFile) {
           toast.info("Enviando foto...");
-          const newPublicUrl = await uploadSellerPhoto(actualPhotoFile, addResult.data.id);
-          if (newPublicUrl) {
+          const uploadResult = await uploadSellerPhoto(actualPhotoFile, addResult.data.id);
+          if (uploadResult.publicUrl) { // Check for the actual URL string
             const photoUpdateResult = await updateSellerMutation.mutateAsync({
               id: addResult.data.id,
-              data: { photo_url: newPublicUrl },
+              data: { photo_url: uploadResult.publicUrl }, // Use the publicUrl string
               userId: currentUser.id,
               userEmail: currentUser.email || "",
             });
@@ -169,7 +170,8 @@ const SellerManagementPage = () => {
               toast.success("Vendedor e foto adicionados com sucesso!");
             }
           } else {
-            toast.warning("Vendedor adicionado, mas falha ao enviar foto.");
+            // uploadResult.error contains the error from uploadSellerPhoto
+            toast.warning(`Vendedor adicionado, mas falha ao enviar foto: ${uploadResult.error?.message || 'Erro desconhecido no upload.'}`);
           }
           queryClient.invalidateQueries({ queryKey: ['allSellerProfiles'] });
           setIsAddEditDialogOpen(false);
@@ -370,9 +372,22 @@ const SellerManagementPage = () => {
                         {seller.status || 'Desconhecido'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right p-2">
-                      <Button variant="ghost" size="icon" className="hover:bg-gray-100">
-                        <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                    <TableCell className="text-right p-2 space-x-1"> {/* Added space-x-1 for button spacing */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-gray-200"
+                        onClick={() => handleOpenEditDialog(seller)}
+                      >
+                        <Pencil className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-red-100"
+                        onClick={() => handleOpenDeleteDialog(seller)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     </TableCell>
                   </TableRow>

@@ -95,11 +95,11 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
 
   const handlePersonClick = (person: SellerProfile) => { // Updated type
     // Ensure name exists before trying to use it in navigation
-    // SellerProfile has `id` which is more reliable for navigation if a detail page exists.
-    // For now, keeping navigation by name if that's the existing pattern, or using ID.
-    // navigate(`/salesperson/${person.id}`); // Example if navigating by ID
-    if (person.name) {
-      navigate(`/salesperson/${person.name.toLowerCase().replace(/\s+/g, '-')}`);
+    // SellerProfile has `id` which is more reliable for navigation.
+    if (person.id) {
+      navigate(`/salesperson/${person.id}`); // Navigate using UUID id
+    } else {
+      console.warn("Salesperson ID is missing, cannot navigate.", person);
     }
   };
 
