@@ -19,7 +19,7 @@ export const uploadSellerPhoto = async (
 
   const fileExtension = file.name.split('.').pop();
   const fileName = `${uuidv4()}.${fileExtension}`;
-  const filePath = `public/${sellerId}/${fileName}`; // Store in a 'public' folder within bucket for easier public access setup
+  const filePath = `${sellerId}/${fileName}`; // Store in a 'public' folder within bucket for easier public access setup
 
   const { error: uploadError } = await supabase.storage
     .from(SELLER_AVATARS_BUCKET)
