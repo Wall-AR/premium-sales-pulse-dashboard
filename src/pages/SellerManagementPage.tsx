@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'; // Added useEffect
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext'; // Added useAuth
-import { 
-  getAllSellerProfiles, 
-  SellerProfile, 
-  addSellerProfile, 
+import {
+  getAllSellerProfiles,
+  SellerProfile,
+  addSellerProfile,
   updateSellerProfile,
-  deleteSellerProfile, 
-  NewSellerProfileData 
+  deleteSellerProfile,
+  NewSellerProfileData
 } from '@/lib/supabaseQueries';
 import { uploadSellerPhoto, deleteSellerPhoto } from '@/lib/supabaseStorage'; // Import storage functions
 import { Button } from '@/components/ui/button';
@@ -16,14 +16,15 @@ import { toast } from 'sonner'; // Import toast
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  PlusCircle, 
-  UserCircle, 
-  AlertTriangle as PageAlertTriangle, 
-  Users, 
+import {
+  PlusCircle,
+  UserCircle,
+  AlertTriangle as PageAlertTriangle,
+  Users,
   Pencil,
   ArrowLeft, // Added ArrowLeft
-  Trash2 // Added Trash2
+  Trash2, // Added Trash2
+  MoreHorizontal // Added MoreHorizontal
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -35,19 +36,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger, 
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
 
 const SellerManagementPage = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user: currentUser } = useAuth(); 
-  const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false); 
+  const { user: currentUser } = useAuth();
+  const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [editingSeller, setEditingSeller] = useState<SellerProfile | null>(null);
   const [sellerToDelete, setSellerToDelete] = useState<SellerProfile | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isProcessingSubmit, setIsProcessingSubmit] = useState(false); 
+  const [isProcessingSubmit, setIsProcessingSubmit] = useState(false);
 
 
   const { data: sellers, isLoading, error, isError } = useQuery<SellerProfile[], Error>({
@@ -56,7 +57,7 @@ const SellerManagementPage = () => {
   });
 
   const addSellerMutation = useMutation({
-    mutationFn: (params: { sellerData: NewSellerProfileData; userId: string; userEmail: string }) => 
+    mutationFn: (params: { sellerData: NewSellerProfileData; userId: string; userEmail: string }) =>
       addSellerProfile(params.sellerData, params.userId, params.userEmail),
     // onSuccess/onError handled in handleDialogSubmit
   });
@@ -66,7 +67,7 @@ const SellerManagementPage = () => {
       updateSellerProfile(params.id, params.data, params.userId, params.userEmail),
     // onSuccess/onError handled in handleDialogSubmit
   });
-  
+
   const deleteSellerMutation = useMutation({
     mutationFn: (params: { sellerId: string; userId: string; userEmail: string; sellerName?: string }) =>
       deleteSellerProfile(params.sellerId, params.userId, params.userEmail, params.sellerName),
@@ -117,13 +118,13 @@ const SellerManagementPage = () => {
             toast.error("Falha ao enviar a nova foto. O perfil será atualizado sem alterar a foto.");
           }
         }
-        
+
         const dataToUpdate = { ...profileData, photo_url: newPhotoUrl };
-        const updateResult = await updateSellerMutation.mutateAsync({ 
-          id: editingSeller.id, 
-          data: dataToUpdate, 
-          userId: currentUser.id, 
-          userEmail: currentUser.email || "" 
+        const updateResult = await updateSellerMutation.mutateAsync({
+          id: editingSeller.id,
+          data: dataToUpdate,
+          userId: currentUser.id,
+          userEmail: currentUser.email || ""
         });
 
         if (updateResult.error) {
@@ -144,10 +145,10 @@ const SellerManagementPage = () => {
         }
       } else {
         // Add new seller logic
-        const addResult = await addSellerMutation.mutateAsync({ 
-          sellerData: profileData as NewSellerProfileData, 
-          userId: currentUser.id, 
-          userEmail: currentUser.email || "" 
+        const addResult = await addSellerMutation.mutateAsync({
+          sellerData: profileData as NewSellerProfileData,
+          userId: currentUser.id,
+          userEmail: currentUser.email || ""
         });
 
         if (addResult.error) {
@@ -184,9 +185,9 @@ const SellerManagementPage = () => {
       setIsProcessingSubmit(false);
     }
   };
-  
+
   const handleOpenAddDialog = () => {
-    setEditingSeller(null); 
+    setEditingSeller(null);
     setIsAddEditDialogOpen(true);
   };
 
@@ -194,11 +195,11 @@ const SellerManagementPage = () => {
     setEditingSeller(seller);
     setIsAddEditDialogOpen(true);
   };
-  
+
   const handleAddEditDialogClose = (open: boolean) => {
     setIsAddEditDialogOpen(open);
     if (!open) {
-      setEditingSeller(null); 
+      setEditingSeller(null);
     }
   };
 
@@ -308,7 +309,7 @@ const SellerManagementPage = () => {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <div className="mb-6 flex"> 
+      <div className="mb-6 flex">
         <Button
           variant="outline"
           onClick={() => navigate("/")}
@@ -382,8 +383,8 @@ const SellerManagementPage = () => {
         </CardContent>
       </Card>
 
-      <AddSellerDialog 
-        isOpen={isAddEditDialogOpen} 
+      <AddSellerDialog
+        isOpen={isAddEditDialogOpen}
         onOpenChange={handleAddEditDialogClose}
         onSubmitHandler={handleDialogSubmit}
         isSubmitting={isProcessingSubmit}
@@ -401,7 +402,7 @@ const SellerManagementPage = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={confirmDeleteSeller}
                 className="bg-red-600 hover:bg-red-700"
                 disabled={deleteSellerMutation.isLoading}

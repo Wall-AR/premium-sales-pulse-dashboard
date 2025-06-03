@@ -45,7 +45,7 @@ export const KPICards = ({ data }: KPICardsProps) => {
   const totalClients = data.total_clients ?? 0;
   const newClients = data.new_clients ?? 0;
   const globalAvgTicket = data.global_avg_ticket ?? 0;
-  
+
   const goalPercentage = (totalSold / (totalGoal === 0 ? 1 : totalGoal)) * 100; // Avoid division by zero
 
   const kpis = [

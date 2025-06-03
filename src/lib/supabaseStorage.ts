@@ -79,7 +79,7 @@ export const deleteSellerPhoto = async (
       console.error('Could not extract file path from URL:', photoUrl);
       return { error: new Error('Could not extract file path from URL.') };
     }
-    
+
     console.log(`Attempting to delete file at path: ${filePath} from bucket ${SELLER_AVATARS_BUCKET}`);
 
     const { error } = await supabase.storage

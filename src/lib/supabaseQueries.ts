@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { addHistoryLogEntry, NewHistoryLogEntryData } from './historyLog'; 
+import { addHistoryLogEntry, NewHistoryLogEntryData } from './historyLog';
 
 interface KPI {
   total_sold: number;
@@ -69,7 +69,7 @@ export async function getSalespeople(month_year_filter?: string): Promise<Salesp
       console.error('KPI lookup failed for month_year. Trying fallback to most recent month_year in salespeople table.', kpiError);
       const { data: latestSalespeopleMonth, error: latestSalespeopleMonthError } = await supabase
         .from('salespeople')
-        .select('month_year') 
+        .select('month_year')
         .order('month_year', { ascending: false })
         .limit(1)
         .maybeSingle(); // Use maybeSingle to handle null result without error
@@ -138,11 +138,11 @@ export async function addSaleRecord(
     console.error('Error adding sale record:', error);
   } else if (data) { // If sale record creation was successful and data is available
     const logEntry: NewHistoryLogEntryData = {
-      user_id: saleData.created_by, 
-      user_email: userEmail,       
+      user_id: saleData.created_by,
+      user_email: userEmail,
       action_type: 'SALE_CREATED',
       record_type: 'sale',
-      record_id: data.id,      
+      record_id: data.id,
       details: `Venda (Nº Pedido: ${data.order_number}, Valor: ${data.amount}) registrada.`
     };
     const logResult = await addHistoryLogEntry(logEntry);
@@ -162,7 +162,7 @@ export async function updateSaleRecord(
   // `salesperson_id` could be updatable if requirements allow, but often it's fixed.
   // For this function, we assume `salesperson_id` is not part of the updatable fields directly.
   // If it needs to be, the type Partial<Omit<NewSaleRecordData, 'created_by'>> would include it.
-  
+
   const dataToUpdate = {
     ...saleData,
     updated_at: new Date().toISOString(), // Manually set updated_at, though DB can also handle this.
@@ -242,7 +242,7 @@ export async function getAllSellerProfiles(): Promise<SellerProfile[]> {
     .from('salespeople') // Changed from 'seller_profiles'
     .select('*') // Changed to select all columns
     .order('name', { ascending: true });
-  
+
   console.log('[getAllSellerProfiles] Raw Supabase data:', data);
   console.error('[getAllSellerProfiles] Supabase error:', error); // Use console.error for errors
 
@@ -251,17 +251,17 @@ export async function getAllSellerProfiles(): Promise<SellerProfile[]> {
     return [];
   }
   // Ensure data is an array before returning, or default to empty array
-  return Array.isArray(data) ? data : []; 
+  return Array.isArray(data) ? data : [];
 }
 
-export type NewSellerProfileData = Omit<SellerProfile, 'id'>; 
+export type NewSellerProfileData = Omit<SellerProfile, 'id'>;
 
 export async function addSellerProfile(
   sellerData: NewSellerProfileData,
   userId: string,
   userEmail: string
 ): Promise<{ data: SellerProfile | null, error: any }> {
-  
+
   // Ensure photo_url is explicitly null if not provided or an empty string, to avoid DB constraint issues.
   const dataToInsert = {
     ...sellerData,
@@ -300,7 +300,7 @@ export async function addSellerProfile(
 }
 
 export async function updateSellerProfile(
-  sellerId: string, 
+  sellerId: string,
   sellerData: Partial<NewSellerProfileData>,
   userId: string, // Added
   userEmail: string // Added

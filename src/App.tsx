@@ -35,7 +35,7 @@ const App = () => (
             <Route path="/seller-management" element={<ProtectedRoute><SellerManagementPage /></ProtectedRoute>} /> {/* New route */}
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="/salesperson/:id" element={<ProtectedRoute><SalespersonReport /></ProtectedRoute>} />
-            
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

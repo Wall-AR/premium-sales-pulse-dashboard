@@ -22,7 +22,7 @@ export type NewHistoryLogEntryData = Omit<HistoryLogRecord, 'id' | 'timestamp'>;
 export const addHistoryLogEntry = async (
   logData: NewHistoryLogEntryData
 ): Promise<{ error: any }> => {
-  
+
   const dataToInsert = {
     ...logData,
     // timestamp is set by default in the database using now()
@@ -38,6 +38,6 @@ export const addHistoryLogEntry = async (
     // So, we log the error but don't necessarily throw it to stop the parent process.
     // The calling function can decide how critical logging errors are.
   }
-  
+
   return { error };
 };
