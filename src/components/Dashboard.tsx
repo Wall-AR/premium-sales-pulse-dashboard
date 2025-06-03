@@ -16,32 +16,32 @@ import type { KPI, DailySale } from "@/lib/supabaseQueries"; // Removed Salesper
 
 export const Dashboard = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'ranking' | 'charts' | 'analysis'>('overview');
-  
+
   // activeFilters will be managed by DashboardFilters in a later step.
   // For now, month_year is undefined, so supabaseQueries will fetch the latest data.
   const [activeFilters] = useState<{ month_year?: string }>({});
 
-  const { 
-    data: kpisData, 
-    isLoading: kpisLoading, 
-    error: kpisError 
+  const {
+    data: kpisData,
+    isLoading: kpisLoading,
+    error: kpisError
   } = useQuery<KPI | null, Error, KPI | null, ['kpis', { month_year?: string }]>(
     { queryKey: ['kpis', activeFilters], queryFn: () => getKPIs(activeFilters.month_year) }
   );
 
-  const { 
-    data: salespeopleData, 
-    isLoading: salespeopleLoading, 
-    error: salespeopleError 
+  const {
+    data: salespeopleData,
+    isLoading: salespeopleLoading,
+    error: salespeopleError
   } = useQuery<SellerProfile[], Error>({ // Updated type
     queryKey: ['allSellerProfilesForDashboard'], // New queryKey
     queryFn: getAllSellerProfiles // Updated queryFn
   });
 
-  const { 
-    data: dailySalesData, 
-    isLoading: dailySalesLoading, 
-    error: dailySalesError 
+  const {
+    data: dailySalesData,
+    isLoading: dailySalesLoading,
+    error: dailySalesError
   } = useQuery<DailySale[], Error, DailySale[], ['dailySales', { month_year?: string }]>(
     { queryKey: ['dailySales', activeFilters], queryFn: () => getDailySales(activeFilters.month_year) }
   );
@@ -83,7 +83,7 @@ export const Dashboard = () => {
             <Target className="w-16 h-16 text-red-500 mx-auto mb-4" /> {/* Using Target as a generic error icon */}
             <h2 className="text-2xl font-bold text-red-700 mb-2">Oops! Algo deu errado.</h2>
             <p className="text-gray-600 mb-6">Não foi possível carregar os dados do dashboard. Por favor, tente novamente mais tarde.</p>
-            <Button 
+            <Button
               onClick={() => {
                 // Optional: Implement a refetch mechanism here if desired
                 // For now, it just acts as a placeholder or could reload the page
@@ -140,7 +140,7 @@ export const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <img 
                 src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
-                alt="NutraManager Logo" 
+                alt="NutraManager Logo"
                 className="h-12 w-auto"
               />
               <div>

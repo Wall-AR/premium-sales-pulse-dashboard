@@ -40,9 +40,9 @@ export const LoginPage = () => {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <img 
-            src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
-            alt="NutraManager Logo" 
+          <img
+            src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png"
+            alt="NutraManager Logo"
             className="w-20 h-20 mx-auto mb-4"
           />
           <CardTitle className="text-2xl font-bold text-emerald-700">Bem-vindo(a) de Volta</CardTitle>

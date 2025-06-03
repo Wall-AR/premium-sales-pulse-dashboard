@@ -21,7 +21,7 @@ export const Navigation = () => {
           <div className="flex items-center space-x-2 pr-4 border-r border-green-200">
             <img 
               src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
-              alt="NutraManager" 
+              alt="NutraManager"
               className="h-6 w-auto"
             />
             <span className="font-bold text-green-700 text-sm hidden sm:inline">NutraManager</span>

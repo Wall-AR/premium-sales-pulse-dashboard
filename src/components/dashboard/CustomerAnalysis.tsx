@@ -105,8 +105,8 @@ export const CustomerAnalysis = ({ data }: CustomerAnalysisProps) => {
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  verticalAlign="bottom" 
+                <Legend
+                  verticalAlign="bottom"
                   height={36}
                   iconType="circle"
                   formatter={(value, entry) => <span className="text-gray-600">{value}</span>}

@@ -124,7 +124,7 @@ export const AddSellerDialog: React.FC<AddSellerDialogProps> = ({
     await onSubmitHandler(data);
     // No need to manually reset here if onOpenChange(false) triggers the useEffect for reset
   };
-  
+
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       // Reset form and preview when dialog is closed
@@ -204,7 +204,7 @@ export const AddSellerDialog: React.FC<AddSellerDialogProps> = ({
             />
             {errors.status && <p className="text-xs text-red-600">{errors.status.message}</p>}
           </div>
-          
+
           <DialogFooter className="pt-4">
             <DialogClose asChild>
               <Button type="button" variant="outline">

@@ -37,8 +37,8 @@ export const SignupPage = () => {
         // On successful signup, Supabase sends a confirmation email.
         // You might want to navigate to a page saying "Please check your email"
         // or directly to login, or dashboard if auto-login is configured (depends on Supabase settings)
-        alert('Cadastro realizado com sucesso! Por favor, verifique seu e-mail para confirmar sua conta.'); 
-        navigate('/login'); 
+        alert('Cadastro realizado com sucesso! Por favor, verifique seu e-mail para confirmar sua conta.');
+        navigate('/login');
       }
     } else {
       // Handle cases where user might be null but no error (e.g. email confirmation required)
@@ -53,9 +53,9 @@ export const SignupPage = () => {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <img 
-            src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
-            alt="NutraManager Logo" 
+          <img
+            src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png"
+            alt="NutraManager Logo"
             className="w-20 h-20 mx-auto mb-4"
           />
           <CardTitle className="text-2xl font-bold text-emerald-700">Criar Conta</CardTitle>

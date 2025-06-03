@@ -51,13 +51,13 @@ export const GoalProgress = ({ salespeople }: GoalProgressProps) => {
   // Since SellerProfile does not contain performance data (sold, goal, challenge, mega),
   // we'll display 0 or "N/A" for these metrics.
   const totalSold = 0;
-  const totalGoal = 0; 
+  const totalGoal = 0;
   const progressPercentage = 0;
   const challengesMet = 0; // Not available in SellerProfile
   const megasMet = 0; // Not available in SellerProfile
 
   // Calculate the stroke dasharray for the circle
-  const radius = 70; 
+  const radius = 70;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = `${(progressPercentage / 100) * circumference} ${circumference}`;
 
@@ -72,7 +72,7 @@ export const GoalProgress = ({ salespeople }: GoalProgressProps) => {
             {/* Background circle */}
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 180 180"> {/* Adjusted viewBox */}
               <circle
-                cx="90" 
+                cx="90"
                 cy="90"
                 r={radius}
                 stroke="#e5e7eb" // Light gray
@@ -114,7 +114,7 @@ export const GoalProgress = ({ salespeople }: GoalProgressProps) => {
             <div className="text-center">
               <div className="flex items-center justify-center text-blue-600">
                 <ShieldCheck className="w-5 h-5 mr-1.5" />
-                <span className="text-xl font-bold">N/A</span> 
+                <span className="text-xl font-bold">N/A</span>
               </div>
               <p className="text-xs text-gray-500">Desafios Batidos</p>
             </div>

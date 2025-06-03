@@ -5,15 +5,15 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  getAllSellerProfiles, 
-  SellerProfile, 
+import {
+  getAllSellerProfiles,
+  SellerProfile,
   addSaleRecord,
   updateSaleRecord,
   getSaleRecordById,
   deleteSaleRecord, // Added deleteSaleRecord
   NewSaleRecordData,
-  SaleRecord 
+  SaleRecord
 } from "@/lib/supabaseQueries";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -53,12 +53,12 @@ export type SalesEntryFormData = z.infer<typeof salesEntrySchema>;
 
 const SalesEntry = () => {
   const navigate = useNavigate();
-  const { 
-    register, 
-    handleSubmit, 
-    control, 
+  const {
+    register,
+    handleSubmit,
+    control,
     formState: { errors, isSubmitting },
-    reset 
+    reset
   } = useForm<SalesEntryFormData>({
     resolver: zodResolver(salesEntrySchema),
     defaultValues: {
@@ -126,15 +126,15 @@ const SalesEntry = () => {
                       name="salesperson_id"
                       control={control}
                       render={({ field }) => (
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <Select
+                          onValueChange={field.onChange}
                           value={field.value}
                           disabled={sellersQuery.isLoading || sellersQuery.isError}
                         >
                           <SelectTrigger className="border-green-200 focus:border-green-500">
                             <SelectValue placeholder={
-                              sellersQuery.isLoading ? "Carregando vendedores..." : 
-                              sellersQuery.isError ? "Erro ao carregar" : 
+                              sellersQuery.isLoading ? "Carregando vendedores..." :
+                              sellersQuery.isError ? "Erro ao carregar" :
                               "Selecione o vendedor"
                             } />
                           </SelectTrigger>
@@ -232,7 +232,7 @@ const SalesEntry = () => {
                     disabled={isSubmitting || sellersQuery.isLoading}
                   >
                     {isSubmitting ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> 
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}

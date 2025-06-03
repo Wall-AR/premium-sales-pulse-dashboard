@@ -104,7 +104,7 @@ CREATE POLICY "Allow authenticated users to insert salespeople"
   TO authenticated
   WITH CHECK (true); -- Or add specific checks if needed, e.g., based on user role
 
-CREATE POLICY "Allow authenticated users to update salespeople" 
+CREATE POLICY "Allow authenticated users to update salespeople"
   ON public.salespeople FOR UPDATE
   TO authenticated
   USING (true) -- Allows updating any record if you can select it
