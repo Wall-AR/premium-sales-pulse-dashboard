@@ -114,8 +114,20 @@ const SellerManagementPage = () => {
             }
             newPhotoUrl = uploadResult.publicUrl; // Use the publicUrl string
             toast.success("Foto enviada com sucesso!");
-          } else {
-            toast.error(`Falha ao enviar a nova foto: ${uploadResult.error?.message || 'Erro desconhecido no upload.'} O perfil será atualizado sem alterar a foto.`);
+          } else { // Photo upload to storage FAILED
+            let photoErrorMessage = "Erro desconhecido no upload.";
+            if (uploadResult.error) {
+              if (typeof uploadResult.error.message === 'string' && uploadResult.error.message.length > 0) {
+                photoErrorMessage = uploadResult.error.message;
+              } else if (typeof (uploadResult.error as any).error === 'string' && (uploadResult.error as any).error.length > 0) { // Check for Supabase specific error.error
+                photoErrorMessage = (uploadResult.error as any).error;
+              } else if (typeof uploadResult.error === 'string' && uploadResult.error.length > 0) {
+                photoErrorMessage = uploadResult.error;
+              }
+              // Log the full error object from uploadSellerPhoto for detailed inspection
+              console.error("[handleDialogSubmit - Edit Seller] Full photo upload error object:", JSON.stringify(uploadResult.error, null, 2));
+            }
+            toast.error(`Falha ao enviar a nova foto: ${photoErrorMessage}. O perfil será atualizado sem alterar a foto.`);
             // newPhotoUrl remains editingSeller.photo_url (or its initial value)
           }
         }
@@ -169,9 +181,20 @@ const SellerManagementPage = () => {
             } else {
               toast.success("Vendedor e foto adicionados com sucesso!");
             }
-          } else {
-            // uploadResult.error contains the error from uploadSellerPhoto
-            toast.warning(`Vendedor adicionado, mas falha ao enviar foto: ${uploadResult.error?.message || 'Erro desconhecido no upload.'}`);
+          } else { // Photo upload to storage FAILED
+            let photoErrorMessage = "Erro desconhecido no upload.";
+            if (uploadResult.error) {
+              if (typeof uploadResult.error.message === 'string' && uploadResult.error.message.length > 0) {
+                photoErrorMessage = uploadResult.error.message;
+              } else if (typeof (uploadResult.error as any).error === 'string' && (uploadResult.error as any).error.length > 0) { // Check for Supabase specific error.error
+                photoErrorMessage = (uploadResult.error as any).error;
+              } else if (typeof uploadResult.error === 'string' && uploadResult.error.length > 0) {
+                photoErrorMessage = uploadResult.error;
+              }
+              // Log the full error object from uploadSellerPhoto for detailed inspection
+              console.error("[handleDialogSubmit - Add Seller] Full photo upload error object:", JSON.stringify(uploadResult.error, null, 2));
+            }
+            toast.warning(`Vendedor adicionado, mas falha ao enviar foto: ${photoErrorMessage}`);
           }
           queryClient.invalidateQueries({ queryKey: ['allSellerProfiles'] });
           setIsAddEditDialogOpen(false);

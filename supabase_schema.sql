@@ -44,7 +44,7 @@ ALTER TABLE public.kpis ENABLE ROW LEVEL SECURITY;
 -- Table for individual sales transaction records
 CREATE TABLE public.sales_records (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    salesperson_id UUID NOT NULL REFERENCES public.salespeople(id),
+    salesperson_id UUID NOT NULL REFERENCES public.salespeople(id) ON DELETE CASCADE,
     amount NUMERIC NOT NULL,
     sale_date DATE NOT NULL,
     is_new_customer BOOLEAN DEFAULT false,
