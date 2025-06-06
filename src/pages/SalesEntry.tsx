@@ -180,6 +180,8 @@ const SalesEntry = () => {
         created_by: currentUser.id,
         // salesperson_id is already in formData
       };
+      console.log('[SalesEntry.tsx] currentUser:', currentUser);
+      console.log('[SalesEntry.tsx] Submitting saleDataForAdd:', JSON.stringify(saleDataForAdd, null, 2));
       await addSaleMutation.mutateAsync({
         saleData: saleDataForAdd,
         userEmail: currentUser.email || ""
