@@ -125,10 +125,22 @@ CREATE POLICY "Allow authenticated users to select all kpis"
 
 -- Policies for 'sales_records' table
 -- Assumes RLS is already enabled for this table.
-CREATE POLICY "Allow users to select their own sales records"
+-- CREATE POLICY "Allow users to select their own sales records"
+--   ON public.sales_records FOR SELECT
+--   TO authenticated
+--   USING (auth.uid() = created_by);
+
+CREATE POLICY "Allow salesperson to view their assigned sales records"
   ON public.sales_records FOR SELECT
   TO authenticated
-  USING (auth.uid() = created_by);
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.salespeople sp
+      WHERE sp.id = public.sales_records.salesperson_id
+        AND sp.email = (SELECT u.email FROM auth.users u WHERE u.id = auth.uid())
+    )
+  );
 
 CREATE POLICY "Allow users to insert their own sales records"
   ON public.sales_records FOR INSERT
