@@ -28,29 +28,26 @@ interface DailySale {
 }
 
 export async function getKPIs(month_year_filter?: string): Promise<KPI | null> {
-  let query = supabase.from('kpis').select('total_sold, total_goal, total_clients, new_clients, global_avg_ticket');
-
+  let queryBuilder = supabase.from('kpis').select('total_sold, total_goal, total_clients, new_clients, global_avg_ticket');
   if (month_year_filter) {
-    query = query.eq('month_year', month_year_filter);
+    queryBuilder = queryBuilder.eq('month_year', month_year_filter);
   } else {
-    // Fetch the latest entry based on month_year.
-    // Assuming month_year is a string like "YYYY-MM".
-    // If there's a created_at or a proper date field for ordering "latest", that would be more robust.
-    // For now, ordering by month_year descending.
-    query = query.order('month_year', { ascending: false });
+    queryBuilder = queryBuilder.order('month_year', { ascending: false });
   }
+  queryBuilder = queryBuilder.limit(1); // Keep limit(1)
 
-  // Always limit to 1 as we expect a single KPI object or the latest one.
-  query = query.limit(1).single();
-
-  const { data, error } = await query;
+  const { data: kpiResult, error } = await queryBuilder;
 
   if (error) {
     console.error('Error fetching KPIs:', error);
     return null;
   }
-
-  return data;
+  if (!kpiResult || kpiResult.length === 0) {
+    console.log('[getKPIs] No KPI data found for filter:', month_year_filter);
+    return null;
+  }
+  // console.log('[getKPIs] Raw KPI data:', kpiResult[0]); // Optional: for debugging if needed
+  return kpiResult[0] as KPI; // Return the first (and only) item
 }
 
 export async function getSalespeople(month_year_filter?: string): Promise<Salesperson[]> {
@@ -134,11 +131,13 @@ export async function addSaleRecord(
   saleData: NewSaleRecordData,
   userEmail: string // Added userEmail for logging
 ): Promise<{ data: SaleRecord | null; error: any }> {
+  console.log('[supabaseQueries.ts] addSaleRecord received saleData:', JSON.stringify(saleData, null, 2));
   const { data, error } = await supabase
     .from('sales_records')
     .insert(saleData)
     .select()
     .single();
+  console.log('[supabaseQueries.ts] Supabase response from insert:', { data: JSON.stringify(data, null, 2), error: JSON.stringify(error, null, 2) });
 
   if (error) {
     console.error('Error adding sale record:', error);
@@ -389,18 +388,21 @@ export async function getDailySales(month_year_filter?: string): Promise<DailySa
 
   if (!targetMonthYear) {
     // Fetch the latest month_year from the kpis table
-    const { data: kpiData, error: kpiError } = await supabase
+    const { data: kpiMonthData, error: kpiError } = await supabase
       .from('kpis')
       .select('month_year')
       .order('month_year', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (kpiError || !kpiData?.month_year) {
-      console.error('Failed to fetch latest month_year from kpis for getDailySales. Returning empty array.', kpiError);
-      return [];
+    if (kpiError) {
+      console.error('Failed to fetch latest month_year from kpis for getDailySales due to query error:', kpiError);
+      return []; // Return empty array as per original error handling
     }
-    targetMonthYear = kpiData.month_year;
+    if (!kpiMonthData || kpiMonthData.length === 0 || !kpiMonthData[0]?.month_year) {
+      console.warn('Failed to fetch latest month_year from kpis for getDailySales (no data or month_year field missing). Returning empty array.');
+      return []; // Return empty array
+    }
+    targetMonthYear = kpiMonthData[0].month_year;
     console.log("Using month_year from kpis for getDailySales:", targetMonthYear);
   }
 
