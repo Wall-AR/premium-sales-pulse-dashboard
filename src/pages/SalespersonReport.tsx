@@ -1,16 +1,26 @@
 import React from 'react';
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getSellerProfileById, SellerProfile } from "@/lib/supabaseQueries";
+import { getSellerProfileById, SellerProfile, getSalesRecordsBySalesperson, SaleRecord } from "@/lib/supabaseQueries";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Navigation } from "@/components/Navigation";
-import { ArrowLeft, Mail, UserCircle, Activity, Loader2, AlertTriangle } from "lucide-react"; // Added relevant icons
+import { ArrowLeft, Mail, UserCircle, Activity, Loader2, AlertTriangle, Filter } from "lucide-react"; // Added relevant icons
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
+import { Input } from "@/components/ui/input"; // Added Input for filter
+import { Label }  from "@/components/ui/label"; // Added Label for filter
 
 const SalespersonReport = () => {
   const { id: sellerId } = useParams<{ id: string }>(); // Ensure 'id' matches your route param
   const navigate = useNavigate();
+  const [monthYearFilter, setMonthYearFilter] = React.useState<string | undefined>(() => {
+    // Default to current month for example, or leave undefined for "all time"
+    // const today = new Date();
+    // return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    return undefined;
+  });
 
   const {
     data: seller,
@@ -31,13 +41,27 @@ const SalespersonReport = () => {
     enabled: !!sellerId, // Only run query if sellerId is present
   });
 
-  if (isLoading) {
+  const {
+    data: salesRecords,
+    isLoading: isLoadingSalesRecords,
+    isError: isErrorSalesRecords,
+    error: errorSalesRecords
+  } = useQuery<SaleRecord[], Error>({
+    queryKey: ['salesRecordsBySalesperson', sellerId, monthYearFilter], // Include filter in queryKey
+    queryFn: () => {
+      if (!sellerId) return [];
+      return getSalesRecordsBySalesperson(sellerId, monthYearFilter ? { month_year: monthYearFilter } : undefined);
+    },
+    enabled: !!sellerId,
+  });
+
+  if (isLoading || isLoadingSalesRecords) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center">
         <Navigation />
         <div className="flex-grow flex items-center justify-center">
           <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
-          <p className="ml-4 text-green-700 text-xl">Carregando perfil do vendedor...</p>
+          <p className="ml-4 text-green-700 text-xl">Carregando dados do vendedor...</p> {/* Combined loading message */}
         </div>
       </div>
     );
@@ -88,6 +112,59 @@ const SalespersonReport = () => {
     return names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  const performanceMetrics = React.useMemo(() => {
+    if (!salesRecords || salesRecords.length === 0) {
+      return {
+        totalSalesAmount: 0,
+        numberOfSales: 0,
+        averageSaleAmount: 0,
+        totalNewCustomers: 0,
+      };
+    }
+
+    const totalSalesAmount = salesRecords.reduce((sum, record) => sum + record.amount, 0);
+    const numberOfSales = salesRecords.length;
+    const averageSaleAmount = numberOfSales > 0 ? totalSalesAmount / numberOfSales : 0;
+    const totalNewCustomers = salesRecords.filter(record => record.is_new_customer).length;
+
+    return {
+      totalSalesAmount,
+      numberOfSales,
+      averageSaleAmount,
+      totalNewCustomers,
+    };
+  }, [salesRecords]);
+
+  const chartData = React.useMemo(() => {
+    if (!salesRecords || salesRecords.length === 0) {
+      return [];
+    }
+    // Aggregate sales by date
+    const salesByDate: { [date: string]: number } = {};
+    salesRecords.forEach(record => {
+      // Ensure date is treated consistently, avoid timezone shifts if only date part is used
+      const dateObj = new Date(record.sale_date + 'T00:00:00');
+      const dateStr = dateObj.toLocaleDateString('en-CA'); // YYYY-MM-DD for sorting
+      salesByDate[dateStr] = (salesByDate[dateStr] || 0) + record.amount;
+    });
+
+    // Convert to array and sort by date
+    return Object.entries(salesByDate)
+      .map(([date, totalSales]) => ({
+        date,
+        totalSales,
+        // Format date for display in tooltip/axis if needed, or do it in tickFormatter
+        // formattedDate: new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', day: 'numeric', year: 'numeric' })
+       }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [salesRecords]);
+
+  const chartConfig = {
+    totalSales: {
+      label: "Vendas",
+      color: "hsl(var(--chart-1))", // Using a predefined color from shadcn/ui chart theme
+    },
+  } satisfies ChartConfig;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -124,6 +201,26 @@ const SalespersonReport = () => {
               </div>
             </CardHeader>
             <CardContent className="p-6 sm:p-8 space-y-6 bg-white">
+              {/* Date Filter UI */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <Label htmlFor="monthYearFilter" className="block text-sm font-medium text-gray-700 mb-1">
+                  Filtrar Vendas por Mês/Ano:
+                </Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="month"
+                    id="monthYearFilter"
+                    value={monthYearFilter || ""}
+                    onChange={(e) => setMonthYearFilter(e.target.value || undefined)}
+                    className="max-w-xs border-gray-300 focus:border-green-500 focus:ring-green-500"
+                  />
+                  <Button onClick={() => setMonthYearFilter(undefined)} variant="outline" className="text-sm">
+                    Limpar Filtro
+                  </Button>
+                </div>
+                {monthYearFilter && <p className="text-xs text-gray-500 mt-1">Exibindo dados para: {new Date(monthYearFilter + '-02').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}</p>}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <Mail className="w-6 h-6 text-green-600" />
@@ -149,13 +246,129 @@ const SalespersonReport = () => {
                 </div>
               </div>
 
-              {/* Placeholder for future detailed stats or activity */}
+              {/* Performance Metrics Display */}
+              {salesRecords && !isLoadingSalesRecords && !isErrorSalesRecords && (
+                <div className="mb-8 pt-6 border-t border-gray-200">
+                   <h3 className="text-xl font-semibold text-gray-700 mb-4">Resumo de Performance</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardDescription>Total de Vendas</CardDescription>
+                        <CardTitle className="text-2xl">
+                          {performanceMetrics.totalSalesAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </CardTitle>
+                      </CardHeader>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardDescription>Número de Vendas</CardDescription>
+                        <CardTitle className="text-2xl">{performanceMetrics.numberOfSales}</CardTitle>
+                      </CardHeader>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardDescription>Ticket Médio</CardDescription>
+                        <CardTitle className="text-2xl">
+                          {performanceMetrics.averageSaleAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </CardTitle>
+                      </CardHeader>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardDescription>Novos Clientes</CardDescription>
+                        <CardTitle className="text-2xl">{performanceMetrics.totalNewCustomers}</CardTitle>
+                      </CardHeader>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              {/* Sales Activity Table Section */}
               <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-xl font-semibold text-gray-700 mb-4">Atividade de Vendas</h3>
-                <p className="text-gray-500">
-                  Dados detalhados de performance e atividades de vendas para este vendedor serão exibidos aqui em futuras atualizações.
-                </p>
-                {/* Example: Could link to a list of sales by this seller, or show recent activity */}
+                <h3 className="text-xl font-semibold text-gray-700 mb-4">Registros de Vendas</h3> {/* Changed title */}
+
+                {/* Sales Trend Chart */}
+                {chartData.length > 1 && ( // Only show chart if there are multiple data points for a trend
+                  <Card className="mt-6 mb-8">
+                    <CardHeader>
+                      <CardTitle>Tendência de Vendas Diárias</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] sm:h-[400px] p-4">
+                      <ChartContainer config={chartConfig} className="w-full h-full">
+                        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="date"
+                            tickFormatter={(tick) => new Date(tick + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })}
+                            padding={{ left: 20, right: 20 }}
+                          />
+                          <YAxis
+                            tickFormatter={(value) => `R$${(value / 1000)}k`}
+                            domain={['auto', 'auto']}
+                          />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent
+                                        indicator="line"
+                                        nameKey="totalSales"
+                                        labelFormatter={(label, payload) => {
+                                           if (payload && payload.length > 0 && payload[0].payload.date) {
+                                               return new Date(payload[0].payload.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: 'short', year: 'numeric'});
+                                           }
+                                           return label;
+                                        }}
+                                        formatter={(value, name, props) => (
+                                           <div className="flex flex-col">
+                                                <span className="text-xs text-gray-500">{props.payload.label /* This should be the series name from config */}</span>
+                                                <span className="font-bold text-gray-800">
+                                                    {Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                </span>
+                                           </div>
+                                        )}
+                                     />}
+                          />
+                          <ChartLegend content={<ChartLegendContent />} />
+                          <Line dataKey="totalSales" type="monotone" stroke="var(--color-totalSales)" strokeWidth={2} dot={false} name="Vendas" />
+                        </LineChart>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+                )}
+                {salesRecords && salesRecords.length > 0 && chartData.length <= 1 && (
+                  <p className="text-gray-500 mt-4 mb-4 text-center">Não há dados suficientes para exibir o gráfico de tendência (necessário vendas em pelo menos dois dias diferentes).</p>
+                )}
+
+                {/* Sales Records Table */}
+                {isLoadingSalesRecords && <p>Carregando registros de vendas...</p>}
+                {isErrorSalesRecords && <p className="text-red-500">Erro ao carregar registros de vendas: {errorSalesRecords?.message}</p>}
+                {salesRecords && !isLoadingSalesRecords && !isErrorSalesRecords && (
+                  salesRecords.length === 0 ? (
+                    <p className="text-gray-500">Nenhum registro de venda encontrado para este vendedor.</p>
+                  ) : (
+                    <div className="overflow-x-auto mt-4 shadow border-b border-gray-200 sm:rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pedido</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Valor (R$)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {salesRecords.map((record) => (
+                            <tr key={record.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{new Date(record.sale_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{record.order_number}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{record.customer_name || 'N/A'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">{record.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                )}
               </div>
             </CardContent>
           </Card>

@@ -226,6 +226,53 @@ export async function deleteSaleRecord(saleId: string): Promise<{ error: any }> 
   return { error };
 }
 
+export async function getSalesRecordsBySalesperson(
+  salespersonId: string,
+  filters?: { startDate?: string; endDate?: string; month_year?: string }
+): Promise<SaleRecord[]> {
+  if (!salespersonId) {
+    console.warn('[getSalesRecordsBySalesperson] salespersonId is required.');
+    return [];
+  }
+
+  let query = supabase
+    .from('sales_records')
+    .select('*') // Selects all columns defined in SaleRecord
+    .eq('salesperson_id', salespersonId);
+
+  if (filters?.month_year && typeof filters.month_year === 'string' && filters.month_year.match(/^\d{4}-\d{2}$/)) {
+    console.log(`[getSalesRecordsBySalesperson] Applying month_year filter: ${filters.month_year}`);
+    const year = parseInt(filters.month_year.substring(0, 4));
+    const month = parseInt(filters.month_year.substring(5, 7));
+    const startDate = `${filters.month_year}-01`;
+    const lastDay = new Date(year, month, 0).getDate(); // Day before the 1st of next month
+    const endDate = `${filters.month_year}-${String(lastDay).padStart(2, '0')}`;
+    query = query.gte('sale_date', startDate).lte('sale_date', endDate);
+    console.log(`[getSalesRecordsBySalesperson] Date range for month_year: ${startDate} to ${endDate}`);
+  } else if (filters?.startDate && filters?.endDate) {
+    console.log(`[getSalesRecordsBySalesperson] Applying startDate: ${filters.startDate}, endDate: ${filters.endDate}`);
+    query = query.gte('sale_date', filters.startDate).lte('sale_date', filters.endDate);
+  } else if (filters?.startDate) {
+    console.log(`[getSalesRecordsBySalesperson] Applying startDate: ${filters.startDate}`);
+    query = query.gte('sale_date', filters.startDate);
+  } else if (filters?.endDate) {
+    console.log(`[getSalesRecordsBySalesperson] Applying endDate: ${filters.endDate}`);
+    query = query.lte('sale_date', filters.endDate);
+  }
+
+  query = query.order('sale_date', { ascending: false }); // Order after filtering
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error(`[getSalesRecordsBySalesperson] Error fetching sales records for salesperson ${salespersonId} with filters ${JSON.stringify(filters)}:`, error);
+    return [];
+  }
+
+  // console.log(`[getSalesRecordsBySalesperson] Fetched sales records for ${salespersonId}:`, data);
+  return data || [];
+}
+
 // Phase 1: Seller Management - New Interface and Query Function
 export interface SellerProfile {
   id: string; // Assuming 'id' exists on the 'salespeople' table and is a unique identifier for the seller.
