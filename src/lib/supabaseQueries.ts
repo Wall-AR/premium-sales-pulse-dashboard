@@ -235,6 +235,11 @@ export interface SellerProfile {
   photo_url: string | null;
 }
 
+export interface SalespersonPerformance extends SellerProfile {
+  total_sales_amount: number;
+  number_of_sales: number;
+}
+
 export async function getAllSellerProfiles(): Promise<SellerProfile[]> {
   // This function now queries the 'salespeople' table.
   // It assumes that the 'salespeople' table contains columns like 'id', 'email', and 'status'
@@ -425,4 +430,81 @@ export async function getDailySales(month_year_filter?: string): Promise<DailySa
   }
 
   return data || [];
+}
+
+export async function getSalespeopleWithPerformance(
+  month_year_filter?: string // Optional filter for sales records
+): Promise<SalespersonPerformance[]> {
+  // 1. Fetch all seller profiles
+  const { data: sellerProfiles, error: sellerError } = await supabase
+    .from('salespeople')
+    .select('id, name, email, status, photo_url'); // Explicitly select SellerProfile fields
+
+  if (sellerError) {
+    console.error('Error fetching seller profiles for performance data:', sellerError);
+    return [];
+  }
+  if (!sellerProfiles) {
+    console.log('[getSalespeopleWithPerformance] No seller profiles found.');
+    return [];
+  }
+
+  // 2. Fetch relevant sales records
+  // Note: RLS policies will apply to this query.
+  let salesQuery = supabase.from('sales_records').select('salesperson_id, amount, sale_date'); // Added sale_date for filtering
+
+  // Apply month_year_filter if provided.
+  // This assumes sale_date is stored in 'YYYY-MM-DD' format.
+  // And month_year_filter is 'YYYY-MM'.
+  if (month_year_filter) {
+    // Ensure the filter only applies if the month_year_filter is a valid string.
+    if (typeof month_year_filter === 'string' && month_year_filter.match(/^\d{4}-\d{2}$/)) {
+         // Get the first day of the month
+        const startDate = `${month_year_filter}-01`;
+        // Get the last day of the month
+        const year = parseInt(month_year_filter.substring(0, 4));
+        const month = parseInt(month_year_filter.substring(5, 7));
+        const lastDay = new Date(year, month, 0).getDate(); // Day before the 1st of next month
+        const endDate = `${month_year_filter}-${String(lastDay).padStart(2, '0')}`;
+
+        salesQuery = salesQuery.gte('sale_date', startDate).lte('sale_date', endDate);
+        console.log(`[getSalespeopleWithPerformance] Filtering sales from ${startDate} to ${endDate}`);
+    } else {
+        console.warn('[getSalespeopleWithPerformance] Invalid month_year_filter format. Skipping date filter. Expected YYYY-MM, got:', month_year_filter);
+    }
+  }
+
+  const { data: salesRecords, error: salesError } = await salesQuery;
+
+  if (salesError) {
+    console.error('Error fetching sales records for performance data:', salesError);
+    // Return profiles with zero sales if sales records fetch fails
+    return sellerProfiles.map(profile => ({
+      ...profile,
+      total_sales_amount: 0,
+      number_of_sales: 0,
+    }));
+  }
+
+  console.log('[getSalespeopleWithPerformance] Fetched sellerProfiles:', sellerProfiles.length);
+  console.log('[getSalespeopleWithPerformance] Fetched salesRecords:', salesRecords?.length || 0);
+
+  // 3. Combine data
+  const performanceData: SalespersonPerformance[] = sellerProfiles.map(profile => {
+    const relevantSales = salesRecords?.filter(sr => sr.salesperson_id === profile.id) || [];
+    const total_sales_amount = relevantSales.reduce((sum, sr) => sum + (sr.amount || 0), 0);
+    const number_of_sales = relevantSales.length;
+
+    return {
+      ...profile,
+      total_sales_amount,
+      number_of_sales,
+    };
+  });
+
+  // Optional: sort by performance (e.g., total sales amount)
+  performanceData.sort((a, b) => b.total_sales_amount - a.total_sales_amount);
+
+  console.log('[getSalespeopleWithPerformance] Processed performanceData:', performanceData.length);
+  return performanceData;
 }

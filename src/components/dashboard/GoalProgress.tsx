@@ -1,9 +1,9 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Target, Info, ShieldCheck, Star } from "lucide-react";
-import type { SellerProfile } from "@/lib/supabaseQueries"; // Updated type to SellerProfile
+import type { SalespersonPerformance } from "@/lib/supabaseQueries";
 
 interface GoalProgressProps {
-  salespeople: SellerProfile[] | null | undefined; // Updated prop type
+  salespeople: SalespersonPerformance[] | null | undefined;
 }
 
 const GoalProgressSkeleton: React.FC = () => {
@@ -48,13 +48,14 @@ export const GoalProgress = ({ salespeople }: GoalProgressProps) => {
     );
   }
 
-  // Since SellerProfile does not contain performance data (sold, goal, challenge, mega),
-  // we'll display 0 or "N/A" for these metrics.
-  const totalSold = 0;
-  const totalGoal = 0;
-  const progressPercentage = 0;
-  const challengesMet = 0; // Not available in SellerProfile
-  const megasMet = 0; // Not available in SellerProfile
+  // Calculate aggregated metrics from SalespersonPerformance data
+  const totalSold = salespeople?.reduce((acc, person) => acc + person.total_sales_amount, 0) || 0;
+  const totalGoal = 0; // Placeholder - needs a source if real goals are to be shown
+  const progressPercentage = totalGoal > 0 ? Math.min((totalSold / totalGoal) * 100, 100) : 0;
+
+  // challengesMet and megasMet are still N/A as this data isn't in SalespersonPerformance
+  const challengesMetText = "N/A";
+  const megasMetText = "N/A";
 
   // Calculate the stroke dasharray for the circle
   const radius = 70;
@@ -108,25 +109,26 @@ export const GoalProgress = ({ salespeople }: GoalProgressProps) => {
         
         <div className="mt-6 text-center">
           <p className="text-lg font-semibold text-gray-700">
-            R$ {totalSold.toLocaleString('pt-BR')} / <span className="text-gray-500">R$ {totalGoal.toLocaleString('pt-BR')}</span>
+            R$ {totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / <span className="text-gray-500">R$ {totalGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </p>
           <div className="mt-4 flex justify-around items-center">
             <div className="text-center">
               <div className="flex items-center justify-center text-blue-600">
                 <ShieldCheck className="w-5 h-5 mr-1.5" />
-                <span className="text-xl font-bold">N/A</span>
+                <span className="text-xl font-bold">{challengesMetText}</span>
               </div>
               <p className="text-xs text-gray-500">Desafios Batidos</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center text-purple-600">
                 <Star className="w-5 h-5 mr-1.5 text-gray-400" /> {/* Icon kept, but value N/A */}
-                <span className="text-xl font-bold">N/A</span>
+                <span className="text-xl font-bold">{megasMetText}</span>
               </div>
               <p className="text-xs text-gray-500">Megas Batidas</p>
             </div>
           </div>
-          <p className="text-xs text-center text-gray-400 mt-3">Dados de performance detalhados indisponíveis.</p>
+          {/* <p className="text-xs text-center text-gray-400 mt-3">Dados de performance detalhados indisponíveis.</p> */}
+          { totalGoal === 0 && <p className="text-xs text-center text-gray-400 mt-3">Meta global não definida.</p>}
         </div>
       </CardContent>
     </Card>

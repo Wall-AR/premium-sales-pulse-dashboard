@@ -2,10 +2,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Crown, Medal, Info } from "lucide-react"; // Removed ShieldCheck, Star
 import { useNavigate } from "react-router-dom";
-import type { SellerProfile } from "@/lib/supabaseQueries"; // Updated type to SellerProfile
+import type { SalespersonPerformance } from "@/lib/supabaseQueries";
 
 interface SalespersonRankingProps {
-  salespeople: SellerProfile[] | null | undefined; // Updated prop type
+  salespeople: SalespersonPerformance[] | null | undefined;
 }
 
 const SalespersonSkeleton: React.FC = () => {
@@ -70,7 +70,9 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
     );
   }
 
-  const sortedSalespeople = [...salespeople].sort((a, b) => a.name.localeCompare(b.name)); // Sort by name
+  // const sortedSalespeople = [...salespeople].sort((a, b) => a.name.localeCompare(b.name)); // Sort by name
+  // Data is now pre-sorted by performance from getSalespeopleWithPerformance
+  const rankedSalespeople = salespeople;
 
   const getRankIcon = (position: number) => {
     switch (position) {
@@ -86,16 +88,16 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
   };
 
   const getProgressColor = (goalPercentage: number) => {
-    // Performance metrics (sold, goal, progress, challenge, mega) are not available in SellerProfile
+    // Performance metrics (sold, goal, progress, challenge, mega) are now available via SalespersonPerformance
     // So, related UI elements are removed or simplified.
     // Progress bar and related text are removed.
     // Challenge and Mega status are removed.
     return "bg-gray-300"; // Default color if needed, but progress bar removed
   };
 
-  const handlePersonClick = (person: SellerProfile) => { // Updated type
+  const handlePersonClick = (person: SalespersonPerformance) => {
     // Ensure name exists before trying to use it in navigation
-    // SellerProfile has `id` which is more reliable for navigation.
+    // SalespersonPerformance has `id` which is more reliable for navigation.
     if (person.id) {
       navigate(`/salesperson/${person.id}`); // Navigate using UUID id
     } else {
@@ -137,9 +139,14 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-gray-800 text-sm">{person.name || 'Vendedor Desconhecido'}</h3>
-                      {/* Sold amount removed as it's not in SellerProfile */}
+                      <p className="text-sm text-emerald-600 font-semibold">
+                        R$ {person.total_sales_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
-                    {/* Performance metrics (progress bar, goal text, challenge/mega status) are removed */}
+                    <p className="text-xs text-gray-500">
+                      {person.number_of_sales} venda(s)
+                    </p>
+                    {/* Challenge/Mega status could be re-added here if present in SalespersonPerformance */}
                   </div>
                 </div>
               </div>
