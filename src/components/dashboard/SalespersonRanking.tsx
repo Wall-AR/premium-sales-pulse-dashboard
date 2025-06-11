@@ -118,7 +118,7 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
       </CardHeader>
       <CardContent className="p-4">
         <div className="space-y-3">
-          {sortedSalespeople.map((person, index) => (
+          {rankedSalespeople.map((person, index) => (
               <div
                 key={person.id} // Use id as key
                 onClick={() => handlePersonClick(person)}
