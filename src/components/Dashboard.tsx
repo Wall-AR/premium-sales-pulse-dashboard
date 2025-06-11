@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Users, Target, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getKPIs, getAllSellerProfiles, getDailySales, SellerProfile } from "@/lib/supabaseQueries"; // Updated import
-import type { KPI, DailySale } from "@/lib/supabaseQueries"; // Removed Salesperson, SellerProfile already imported
+import { getKPIs, getDailySales, getSalespeopleWithPerformance } from "@/lib/supabaseQueries"; // Updated import
+import type { KPI, DailySale, SalespersonPerformance } from "@/lib/supabaseQueries"; // Removed Salesperson, SellerProfile already imported
 
 export const Dashboard = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'ranking' | 'charts' | 'analysis'>('overview');
@@ -29,14 +29,27 @@ export const Dashboard = () => {
     { queryKey: ['kpis', activeFilters], queryFn: () => getKPIs(activeFilters.month_year) }
   );
 
+  // Log Before useQuery for salespeoplePerformanceData
+  console.log('[Dashboard.tsx] Initializing. activeFilters:', JSON.stringify(activeFilters, null, 2));
+  console.log('[Dashboard.tsx] About to call useQuery for salespeoplePerformance. Month filter:', activeFilters.month_year);
+
   const {
-    data: salespeopleData,
+    data: salespeoplePerformanceData, // Renamed for clarity
     isLoading: salespeopleLoading,
     error: salespeopleError
-  } = useQuery<SellerProfile[], Error>({ // Updated type
-    queryKey: ['allSellerProfilesForDashboard'], // New queryKey
-    queryFn: getAllSellerProfiles // Updated queryFn
-  });
+  } = useQuery<SalespersonPerformance[], Error, SalespersonPerformance[], ['salespeoplePerformance', { month_year?: string }]>(
+    {
+      queryKey: ['salespeoplePerformance', activeFilters], // Use activeFilters for consistency if performance is date-scoped
+      queryFn: () => {
+        console.log('[Dashboard.tsx] queryFn for getSalespeopleWithPerformance is EXECUTING. Month filter:', activeFilters.month_year);
+        return getSalespeopleWithPerformance(activeFilters.month_year);
+      }
+    }
+  );
+
+  console.log('[Dashboard.tsx] salespeoplePerformanceData (after useQuery call):', salespeoplePerformanceData);
+  if (salespeopleLoading) console.log('[Dashboard.tsx] salespeoplePerformanceData is LOADING...');
+  if (salespeopleError) console.log('[Dashboard.tsx] salespeoplePerformanceData fetch ERROR:', salespeopleError);
 
   const {
     data: dailySalesData,
@@ -110,16 +123,16 @@ export const Dashboard = () => {
             <KPICards data={kpisData} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <SalespersonRanking salespeople={salespeopleData} />
+                <SalespersonRanking salespeople={salespeoplePerformanceData} />
               </div>
               <div className="lg:col-span-1">
-                <GoalProgress salespeople={salespeopleData} />
+                <GoalProgress salespeople={salespeoplePerformanceData} />
               </div>
             </div>
           </div>
         );
       case 'ranking':
-        return <SalespersonRanking salespeople={salespeopleData} />;
+        return <SalespersonRanking salespeople={salespeoplePerformanceData} />;
       case 'charts':
         return <SalesChart data={dailySalesData} />;
       case 'analysis':
