@@ -17,9 +17,13 @@ import type { KPI, DailySale, SalespersonPerformance } from "@/lib/supabaseQueri
 export const Dashboard = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'ranking' | 'charts' | 'analysis'>('overview');
 
-  // activeFilters will be managed by DashboardFilters in a later step.
-  // For now, month_year is undefined, so supabaseQueries will fetch the latest data.
-  const [activeFilters] = useState<{ month_year?: string }>({});
+  const [activeFilters, setActiveFilters] = useState<{ month_year?: string }>({});
+
+  const handleMonthYearChange = (newMonthYear?: string) => {
+    setActiveFilters(prevFilters => ({ ...prevFilters, month_year: newMonthYear }));
+    // Potentially reset other filters here if month_year changes, e.g., salesperson_id, customer_type
+    // For now, just updating month_year
+  };
 
   const {
     data: kpisData,
@@ -146,35 +150,15 @@ export const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
-      {/* Header Principal Melhorado */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-700 text-white pt-28 pb-6"> {/* Padding Adjusted */}
-        <div className="container mx-auto px-6 max-w-screen-xl"> {/* Width Constrained */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <img 
-                src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
-                alt="NutraManager Logo"
-                className="h-12 w-auto"
-              />
-              <div>
-                <h1 className="text-3xl font-bold">NutraManager Dashboard</h1>
-                <p className="text-green-100 mt-1">Sistema Avançado de Gestão de Vendas e Performance</p>
-              </div>
-            </div>
-            <div className="text-right text-green-100">
-              <p className="text-sm">Dashboard Profissional</p>
-              {/* This date can be dynamic based on selected filter or current date */}
-              <p className="text-xs">{activeFilters.month_year || new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric'})}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="container mx-auto px-6 py-8">
+      {/* Main content container with adjusted top padding */}
+      <div className="container mx-auto px-6 pt-[96px] pb-8"> {/* Adjusted py-8 to pt-[96px] pb-8 */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Barra Lateral de Filtros */}
           <div className="lg:col-span-1">
-            <DashboardFilters /> {/* DashboardFilters will eventually set activeFilters */}
+            <DashboardFilters
+              onMonthYearChange={handleMonthYearChange}
+              currentMonthYear={activeFilters.month_year}
+            />
           </div>
           
           {/* Card Principal Unificado */}
@@ -193,19 +177,19 @@ export const Dashboard = () => {
               </CardHeader>
               
               <CardContent className="p-0">
-                {/* Navegação por Abas */}
-                <div className="bg-green-50 border-b border-green-200 p-4">
-                  <div className="flex flex-wrap gap-2">
+                {/* Navegação por Abas - Sticky */}
+                <div className="sticky top-[80px] z-40 bg-green-50 border-b border-green-200 p-4">
+                  <div className="flex flex-wrap gap-2 justify-center"> {/* Centering tabs */}
                     {navigationButtons.map((button) => (
                       <Button
                         key={button.id}
-                        variant={activeSection === button.id ? "default" : "outline"}
-                        size="sm"
+                        variant="ghost" // Using ghost variant as base for custom styling
+                        size="sm" // Keep sm size, px-4 will adjust horizontal padding
                         onClick={() => setActiveSection(button.id as any)}
-                        className={`transition-all duration-200 ${
+                        className={`rounded-full px-4 transition-colors duration-200 ${
                           activeSection === button.id
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'border-green-300 text-green-700 hover:bg-green-100'
+                            ? 'bg-green-600 text-white font-semibold shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-sm hover:shadow-md'
                         }`}
                       >
                         <button.icon className="w-4 h-4 mr-2" />

@@ -116,7 +116,8 @@ const Configuration = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
-      <div className="container mx-auto px-6 py-20">
+      {/* Adjusted top padding: py-20 became pt-[100px] pb-20 */}
+      <div className="container mx-auto px-6 pt-[100px] pb-20">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center">
