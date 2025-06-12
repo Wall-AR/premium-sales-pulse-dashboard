@@ -1,34 +1,55 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import React, { useState } from "react"; // Added useState
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Filter } from "lucide-react";
+import { Calendar, Users, Tag } from "lucide-react";
+import { Input } from "@/components/ui/input"; // Added Input
+import { Button } from "@/components/ui/button"; // Added Button
 
-export const DashboardFilters = () => {
+interface DashboardFiltersProps {
+  onMonthYearChange: (monthYear?: string) => void;
+  currentMonthYear?: string;
+}
+
+export const DashboardFilters: React.FC<DashboardFiltersProps> = ({ onMonthYearChange, currentMonthYear }) => {
   return (
-    <Card className="bg-white shadow-lg border-green-100">
-      <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-b">
-        <CardTitle className="flex items-center">
-          <Filter className="w-5 h-5 mr-2" />
-          Filtros
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        <div>
-          <Label className="text-sm font-medium text-green-700">Período</Label>
-          <div className="mt-1 p-3 bg-green-50 rounded border border-green-200 text-sm text-green-700 flex items-center">
-            <Calendar className="w-4 h-4 mr-2" />
-            Abril/2025
-          </div>
+    <Card className="rounded-xl shadow-md bg-white">
+      <CardContent className="p-4 space-y-6">
+        <div className="mb-6"> {/* Período Section */}
+          <Label htmlFor="month_year_filter" className="text-sm font-medium text-gray-700 flex items-center mb-1">
+            <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+            Período (Mês/Ano)
+          </Label>
+          <Input
+            type="month"
+            id="month_year_filter"
+            value={currentMonthYear || ''}
+            onChange={(e) => onMonthYearChange(e.target.value || undefined)}
+            className="mt-1 w-full border-gray-300 focus:border-green-500 rounded-md shadow-sm"
+          />
+          {currentMonthYear && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onMonthYearChange(undefined)}
+              className="mt-2 w-full text-xs text-gray-600 hover:text-gray-800 border-gray-300"
+            >
+              Limpar Filtro de Período
+            </Button>
+          )}
         </div>
 
-        <div>
-          <Label className="text-sm font-medium text-green-700">Vendedor</Label>
+        <div className="mb-6"> {/* Vendedor Section */}
+          <Label className="text-sm font-medium text-gray-700 flex items-center mb-1">
+            <Users className="w-4 h-4 mr-2 text-gray-500" />
+            Vendedor
+          </Label>
           <Select defaultValue="todos">
-            <SelectTrigger className="mt-1 border-green-200 focus:border-green-500">
-              <SelectValue />
+            <SelectTrigger className="mt-1 border-gray-300 focus:border-green-500">
+              <SelectValue placeholder="Selecione um vendedor" />
             </SelectTrigger>
-            <SelectContent className="bg-white border-green-200">
+            <SelectContent className="bg-white border-gray-300">
               <SelectItem value="todos">Todos os Vendedores</SelectItem>
               <SelectItem value="aguila">Águila</SelectItem>
               <SelectItem value="thaynan">Thaynan</SelectItem>
@@ -37,13 +58,16 @@ export const DashboardFilters = () => {
           </Select>
         </div>
 
-        <div>
-          <Label className="text-sm font-medium text-green-700">Tipo de Cliente</Label>
+        <div> {/* Tipo de Cliente Section - last item, mb-6 removed or could be smaller */}
+          <Label className="text-sm font-medium text-gray-700 flex items-center mb-1">
+            <Tag className="w-4 h-4 mr-2 text-gray-500" />
+            Tipo de Cliente
+          </Label>
           <Select defaultValue="todos">
-            <SelectTrigger className="mt-1 border-green-200 focus:border-green-500">
-              <SelectValue />
+            <SelectTrigger className="mt-1 border-gray-300 focus:border-green-500">
+              <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
-            <SelectContent className="bg-white border-green-200">
+            <SelectContent className="bg-white border-gray-300">
               <SelectItem value="todos">Todos os Clientes</SelectItem>
               <SelectItem value="novos">Clientes Novos</SelectItem>
               <SelectItem value="existentes">Clientes Existentes</SelectItem>

@@ -1,54 +1,94 @@
-
-import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Plus, Settings, Home, Users } from "lucide-react"; // Removed BarChart3, User and added Users
+import { Home, Plus, Users, Settings, Bell, UserCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const navItems = [
-    { path: "/", icon: Home, label: "Dashboard", color: "green" },
-    { path: "/sales-entry", icon: Plus, label: "Nova Venda", color: "emerald" },
-    { path: "/seller-management", icon: Users, label: "Vendedores", color: "green" }, // New item
-    { path: "/configuration", icon: Settings, label: "Configurações", color: "green" }
+    { path: "/", icon: Home, label: "Dashboard" },
+    { path: "/sales-entry", icon: Plus, label: "Nova Venda" },
+    { path: "/seller-management", icon: Users, label: "Vendedores" },
+    { path: "/configuration", icon: Settings, label: "Configurações" },
   ];
 
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-auto max-w-4xl">
-      <div className="bg-white/95 backdrop-blur-sm shadow-xl rounded-full px-6 py-3 border-2 border-green-200">
-        <div className="flex items-center justify-center space-x-4">
-          <div className="flex items-center space-x-2 pr-4 border-r border-green-200">
-            <img 
-              src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png" 
-              alt="NutraManager"
-              className="h-6 w-auto"
-            />
-            <span className="font-bold text-green-700 text-sm hidden sm:inline">NutraManager</span>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Button
-                  key={item.path}
-                  variant={isActive ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => navigate(item.path)}
-                  className={`transition-all duration-300 hover:scale-105 font-medium text-xs sm:text-sm px-3 py-2 ${
-                    isActive 
-                      ? `bg-green-600 text-white shadow-lg hover:bg-green-700` 
-                      : `hover:bg-green-50 hover:text-green-700 text-green-600`
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                </Button>
-              );
-            })}
-          </div>
-        </div>
+    <div className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 py-4 h-[80px] bg-gradient-to-r from-green-600 to-green-500 shadow-md">
+      {/* Left Section: Logo and App Name */}
+      <div className="flex items-center space-x-3">
+        <img
+          src="/lovable-uploads/91053ff3-b80e-46d3-bc7c-59736d93d8dd.png"
+          alt="NutraManager Logo"
+          className="h-10 w-auto" // Adjusted height for 80px bar
+        />
+        <h1 className="text-xl font-bold text-white">Sales Performance Dashboard</h1>
+      </div>
+
+      {/* Center Section: Navigation Icons */}
+      <nav className="flex items-center space-x-2">
+        <TooltipProvider>
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Tooltip key={item.path}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost" // Using ghost variant for icon buttons
+                    size="icon" // Using icon size
+                    onClick={() => navigate(item.path)}
+                    className={`p-2 rounded-full transition-colors duration-200 ease-in-out
+                      ${isActive
+                        ? "bg-green-700/70 text-white" // Active state with slightly darker background
+                        : "text-white hover:bg-green-700/50"
+                      }
+                    `}
+                  >
+                    <item.icon className="w-5 h-5" /> {/* Icon size */}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-gray-800 text-white border-gray-700">
+                  <p>{item.label}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </TooltipProvider>
+      </nav>
+
+      {/* Right Section: Notification Bell and User Avatar */}
+      <div className="flex items-center space-x-4">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-white hover:bg-green-700/50 p-2 rounded-full">
+                <Bell className="w-6 h-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-gray-800 text-white border-gray-700">
+              <p>Notificações</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-white hover:bg-green-700/50 p-2 rounded-full">
+                <UserCircle className="w-6 h-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-gray-800 text-white border-gray-700">
+              <p>Perfil do Usuário</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );
