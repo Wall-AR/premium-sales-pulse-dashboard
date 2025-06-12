@@ -214,7 +214,7 @@ const SalesEntry = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    <div className="min-h-screen bg-neutral-bg"> {/* Updated background */}
       <Navigation />
       
       {/* Adjusted top padding: py-20 mt-20 became pt-[96px] pb-20 */}
@@ -224,23 +224,23 @@ const SalesEntry = () => {
             <Button
               variant="ghost"
               onClick={() => navigate("/")}
-              className="mr-4 hover:bg-green-100 text-green-700"
+              className="mr-4 hover:bg-gray-100 text-gray-700" // Neutral for ghost button
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Voltar ao Dashboard
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-green-800">
+              <h1 className="text-3xl font-bold text-gray-800"> {/* Neutral for page title */}
                 {isEditMode ? "Editar Registro de Venda" : "Registrar Nova Venda"}
               </h1>
-              <p className="text-green-600">
+              <p className="text-gray-600"> {/* Neutral for subtitle */}
                 {isEditMode ? "Atualize os detalhes da venda abaixo." : "Cadastre uma nova venda no sistema."}
               </p>
             </div>
           </div>
 
           <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+            <CardHeader className="bg-primary-green text-white"> {/* Header uses primary-green */}
               <CardTitle className="flex items-center">
                 <DollarSign className="w-6 h-6 mr-2" />
                 Informações da Venda
@@ -250,7 +250,7 @@ const SalesEntry = () => {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="salesperson_id" className="text-green-700 font-medium">Vendedor *</Label>
+                    <Label htmlFor="salesperson_id" className="text-gray-700 font-medium">Vendedor *</Label>
                     <Controller
                       name="salesperson_id"
                       control={control}
@@ -260,7 +260,7 @@ const SalesEntry = () => {
                           value={field.value}
                           disabled={sellersQuery.isLoading || sellersQuery.isError}
                         >
-                          <SelectTrigger className="border-green-200 focus:border-green-500">
+                          <SelectTrigger className="border-gray-300 focus:border-primary-green">
                             <SelectValue placeholder={
                               sellersQuery.isLoading ? "Carregando vendedores..." :
                               sellersQuery.isError ? "Erro ao carregar" :
@@ -281,52 +281,52 @@ const SalesEntry = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amount" className="text-green-700 font-medium">Valor da Venda (R$) *</Label>
+                    <Label htmlFor="amount" className="text-gray-700 font-medium">Valor da Venda (R$) *</Label>
                     <Input
                       id="amount"
-                      type="text" // Use text to allow comma, preprocess will handle parseFloat
-                      inputMode="decimal" // For better mobile UX
+                      type="text"
+                      inputMode="decimal"
                       placeholder="0,00"
                       {...register("amount")}
-                      className={`text-lg font-semibold border-green-200 focus:border-green-500 ${errors.amount ? 'border-red-500' : ''}`}
+                      className={`text-lg font-semibold border-gray-300 focus:border-primary-green ${errors.amount ? 'border-red-500' : ''}`}
                     />
                     {errors.amount && <p className="text-xs text-red-500 mt-1">{errors.amount.message}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="sale_date" className="text-green-700 font-medium">Data da Venda *</Label>
+                    <Label htmlFor="sale_date" className="text-gray-700 font-medium">Data da Venda *</Label>
                     <Input
                       id="sale_date"
                       type="date"
                       {...register("sale_date")}
-                      className={`border-green-200 focus:border-green-500 ${errors.sale_date ? 'border-red-500' : ''}`}
+                      className={`border-gray-300 focus:border-primary-green ${errors.sale_date ? 'border-red-500' : ''}`}
                     />
                     {errors.sale_date && <p className="text-xs text-red-500 mt-1">{errors.sale_date.message}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="order_number" className="text-green-700 font-medium">Número do Pedido *</Label>
+                    <Label htmlFor="order_number" className="text-gray-700 font-medium">Número do Pedido *</Label>
                     <Input
                       id="order_number"
                       placeholder="ex: PED-2025-001"
                       {...register("order_number")}
-                      className={`border-green-200 focus:border-green-500 ${errors.order_number ? 'border-red-500' : ''}`}
+                      className={`border-gray-300 focus:border-primary-green ${errors.order_number ? 'border-red-500' : ''}`}
                     />
                     {errors.order_number && <p className="text-xs text-red-500 mt-1">{errors.order_number.message}</p>}
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="customer_name" className="text-green-700 font-medium">Nome do Cliente</Label>
+                    <Label htmlFor="customer_name" className="text-gray-700 font-medium">Nome do Cliente</Label>
                     <Input
                       id="customer_name"
                       placeholder="Nome do cliente"
                       {...register("customer_name")}
-                      className={`border-green-200 focus:border-green-500 ${errors.customer_name ? 'border-red-500' : ''}`}
+                      className={`border-gray-300 focus:border-primary-green ${errors.customer_name ? 'border-red-500' : ''}`}
                     />
                     {errors.customer_name && <p className="text-xs text-red-500 mt-1">{errors.customer_name.message}</p>}
                   </div>
 
-                  <div className="md:col-span-2 flex items-center space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="md:col-span-2 flex items-center space-x-3 p-4 bg-secondary-green/30 rounded-lg border border-secondary-green">
                     <Controller
                       name="is_new_customer"
                       control={control}
@@ -335,15 +335,14 @@ const SalesEntry = () => {
                           id="is_new_customer"
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          className="border-green-300 data-[state=checked]:bg-green-600"
+                          className="border-gray-400 data-[state=checked]:bg-primary-green"
                         />
                       )}
                     />
-                    <Label htmlFor="is_new_customer" className="text-green-700 font-medium mb-0">
+                    <Label htmlFor="is_new_customer" className="text-gray-700 font-medium mb-0">
                       Este é um cliente novo
                     </Label>
                   </div>
-                  {/* The duplicated form field block starting from the second "Valor da Venda (R$) *" was here and has been removed. */}
                 </div>
 
                 <div className="flex justify-end space-x-4 pt-6">
@@ -351,13 +350,13 @@ const SalesEntry = () => {
                     type="button"
                     variant="outline"
                     onClick={() => navigate("/")}
-                    className="border-green-300 text-green-700 hover:bg-green-50"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-100" // Neutral outline
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-green-600 hover:bg-green-700 text-white px-8"
+                    className="bg-primary-green hover:brightness-90 text-white px-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-green/70"
                     disabled={isSubmitting || sellersQuery.isLoading}
                   >
                     {isSubmitting ? (

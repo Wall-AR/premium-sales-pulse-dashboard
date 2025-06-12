@@ -48,7 +48,7 @@ export const GoalProgress: React.FC<GoalProgressProps> = ({ salespeople, kpiData
   // This happens if totalSold is 0 (no sales from salespeople data) AND totalGoal is 0 (no KPI data or goal is zero).
   if (totalSold === 0 && totalGoal === 0) {
     return (
-      <Card className="flex flex-col items-center justify-center bg-white rounded-xl p-6 shadow-md h-full">
+      <Card className="flex flex-col items-center justify-center bg-white rounded-xl p-6 shadow-md h-full transition-all duration-200 hover:scale-105 hover:shadow-lg">
         <Info className="w-8 h-8 mx-auto mb-2 text-gray-400" />
         <p className="text-center text-gray-500">Dados de progresso da empresa indisponíveis.</p>
         <p className="text-xs text-center text-gray-400 mt-2">Verifique se há vendas registradas e se a meta global foi definida.</p>
@@ -57,9 +57,9 @@ export const GoalProgress: React.FC<GoalProgressProps> = ({ salespeople, kpiData
   }
 
   return (
-    <Card className="flex flex-col items-center bg-white rounded-xl p-6 shadow-md h-full">
+    <Card className="flex flex-col items-center bg-white rounded-xl p-6 shadow-md h-full transition-all duration-200 hover:scale-105 hover:shadow-lg">
       <CardContent className="w-full flex flex-col items-center text-center">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Progresso da Meta da Empresa</h3> {/* Title Updated */}
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Progresso da Meta da Empresa</h3>
 
         <div className="relative w-40 h-40 sm:w-48 sm:h-48">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 180 180">

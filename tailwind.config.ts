@@ -52,6 +52,12 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// New custom palette
+				'primary-green': '#1BA94C',
+				'secondary-green': '#CFF5DC',
+				'neutral-bg': '#F9FAFB',
+				'accent-amber': '#FFB020',
+				// Sidebar and other existing extended colors remain
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

@@ -78,12 +78,12 @@ export const KPICards = ({ data }: KPICardsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {kpis.map((kpi, index) => (
-        <Card key={index} className="bg-white shadow-sm rounded-xl transition-shadow duration-300 hover:shadow-md">
+        <Card key={index} className="bg-white shadow-sm rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105">
           <CardContent className="p-4 flex flex-col items-start gap-1">
-            <kpi.icon className="w-5 h-5 text-green-600 mb-1" /> {/* Icon color from spec is green-600 */}
-            <p className="text-sm text-gray-500">{kpi.title}</p> {/* Label style */}
-            <p className="text-xl font-semibold text-green-700">{kpi.value}</p> {/* Metric style */}
-            <p className="text-xs text-gray-500">{kpi.subtitle}</p> {/* Subtext style */}
+            <kpi.icon className="w-5 h-5 text-primary-green mb-1" />
+            <p className="text-sm text-gray-500">{kpi.title}</p>
+            <p className="text-xl font-semibold text-primary-green">{kpi.value}</p> {/* Updated metric color */}
+            <p className="text-xs text-gray-500">{kpi.subtitle}</p>
           </CardContent>
         </Card>
       ))}
