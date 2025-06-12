@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import SalesEntry from "./pages/SalesEntry";
 import Configuration from "./pages/Configuration";
 import SalespersonReport from "./pages/SalespersonReport";
+import FaturamentoPage from "./pages/FaturamentoPage";
+import CompanyReportPage from "./pages/CompanyReportPage"; // Import CompanyReportPage
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LoginPage } from "./pages/Login";
@@ -32,7 +34,9 @@ const App = () => (
             {/* Protected routes */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/sales-entry" element={<ProtectedRoute><SalesEntry /></ProtectedRoute>} />
-            <Route path="/seller-management" element={<ProtectedRoute><SellerManagementPage /></ProtectedRoute>} /> {/* New route */}
+            <Route path="/seller-management" element={<ProtectedRoute><SellerManagementPage /></ProtectedRoute>} />
+            <Route path="/faturamento" element={<ProtectedRoute><FaturamentoPage /></ProtectedRoute>} />
+            <Route path="/company-report" element={<ProtectedRoute><CompanyReportPage /></ProtectedRoute>} /> {/* New Company Report Route */}
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="/salesperson/:id" element={<ProtectedRoute><SalespersonReport /></ProtectedRoute>} />
 

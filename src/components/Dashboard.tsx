@@ -155,7 +155,7 @@ export const Dashboard = () => {
                 <SalespersonRanking salespeople={salespeoplePerformanceData} />
               </div>
               <div className="lg:col-span-1">
-                <GoalProgress salespeople={salespeoplePerformanceData} kpiData={kpisData} />
+                <GoalProgress salespeople={salespeoplePerformanceData} /> {/* kpiData prop removed */}
               </div>
             </div>
           </div>

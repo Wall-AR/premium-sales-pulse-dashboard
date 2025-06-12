@@ -285,7 +285,11 @@ export interface SellerProfile {
 export interface SalespersonPerformance extends SellerProfile {
   total_sales_amount: number;
   number_of_sales: number;
-  previous_period_total_sales_amount?: number; // Added for trend
+  previous_period_total_sales_amount?: number;
+  // New fields for individual targets for the current period
+  current_goal_value?: number;
+  current_challenge_value?: number;
+  current_mega_goal_value?: number;
 }
 
 export async function getAllSellerProfiles(): Promise<SellerProfile[]> {
@@ -525,16 +529,18 @@ export async function getSalespeopleWithPerformance(
   // 2. Determine date ranges for current and previous periods if month_year_filter is provided
   let targetStartDate: string | undefined, targetEndDate: string | undefined;
   let previousStartDate: string | undefined, previousEndDate: string | undefined;
+  let targetMonthDate: string | undefined; // To store YYYY-MM-01 for fetching targets
 
   if (month_year_filter && typeof month_year_filter === 'string' && month_year_filter.match(/^\d{4}-\d{2}$/)) {
     const year = parseInt(month_year_filter.substring(0, 4));
-    const month = parseInt(month_year_filter.substring(5, 7)); // 1-indexed month
+    const month = parseInt(month_year_filter.substring(5, 7));
 
     targetStartDate = `${month_year_filter}-01`;
+    targetMonthDate = targetStartDate; // YYYY-MM-01
     const targetMonthLastDay = new Date(year, month, 0).getDate();
     targetEndDate = `${month_year_filter}-${String(targetMonthLastDay).padStart(2, '0')}`;
 
-    const prevMonthDate = new Date(year, month - 1, 1); // month-1 for 0-indexed month
+    const prevMonthDate = new Date(year, month - 1, 1);
     prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
     const prevYear = prevMonthDate.getFullYear();
     const prevMonth = (prevMonthDate.getMonth() + 1).toString().padStart(2, '0'); // Back to 1-indexed
@@ -592,6 +598,13 @@ export async function getSalespeopleWithPerformance(
   console.log(`[getSalespeopleWithPerformance] Fetched ${currentPeriodSalesRecords.length} current period sales records.`);
   console.log(`[getSalespeopleWithPerformance] Fetched ${previousPeriodSalesRecords.length} previous period sales records.`);
 
+  // Fetch seller targets for the target month if applicable
+  let sellerTargetsForMonth: SellerTarget[] = [];
+  if (targetMonthDate) {
+    sellerTargetsForMonth = await getSellerTargetsForMonth(targetMonthDate);
+    console.log(`[getSalespeopleWithPerformance] Fetched ${sellerTargetsForMonth.length} targets for month ${targetMonthDate}`);
+  }
+
   // 4. Combine data
   const performanceData: SalespersonPerformance[] = sellerProfiles.map(profile => {
     const currentSales = currentPeriodSalesRecords.filter(sr => sr.salesperson_id === profile.id);
@@ -599,16 +612,21 @@ export async function getSalespeopleWithPerformance(
     const number_of_sales = currentSales.length;
 
     let previous_period_total_sales_amount: number | undefined = undefined;
-    if (previousStartDate && previousEndDate) { // Only calculate if previous period was defined
+    if (previousStartDate && previousEndDate) {
       const previousSales = previousPeriodSalesRecords.filter(sr => sr.salesperson_id === profile.id);
       previous_period_total_sales_amount = previousSales.reduce((sum, sr) => sum + (sr.amount || 0), 0);
     }
+
+    const relevantTarget = targetMonthDate ? sellerTargetsForMonth.find(t => t.seller_id === profile.id) : undefined;
 
     return {
       ...profile,
       total_sales_amount,
       number_of_sales,
       previous_period_total_sales_amount,
+      current_goal_value: relevantTarget?.goal_value ?? 0,
+      current_challenge_value: relevantTarget?.challenge_value ?? 0,
+      current_mega_goal_value: relevantTarget?.mega_goal_value ?? 0,
     };
   });
 
@@ -616,6 +634,110 @@ export async function getSalespeopleWithPerformance(
 
   console.log('[getSalespeopleWithPerformance] Processed performanceData count:', performanceData.length);
   return performanceData;
+}
+
+// --- Seller Targets ---
+
+export interface SellerTarget {
+  id: string; // UUID
+  seller_id: string; // UUID FK to public.salespeople
+  month: string; // YYYY-MM-DD (first day of month)
+  goal_value: number;
+  challenge_value: number;
+  mega_goal_value: number;
+  created_at: string; // ISO timestamp
+  updated_at: string; // ISO timestamp
+}
+
+export type NewSellerTargetData = Omit<SellerTarget, 'id' | 'created_at' | 'updated_at'>;
+
+export type UpdateSellerTargetData = Partial<Omit<SellerTarget, 'id' | 'seller_id' | 'month' | 'created_at' | 'updated_at'>>;
+
+export async function addSellerTarget(
+  targetData: NewSellerTargetData
+): Promise<{ data: SellerTarget | null; error: any }> {
+  // RLS considerations: Ensure calling user has rights, or use service key for admin actions.
+  // The current RLS for seller_targets allows insert if auth.uid() = targetData.seller_id.
+  // This means an admin using their own UID cannot set a target for another seller unless
+  // targetData.seller_id is set to the admin's UID, which is likely not the intention if
+  // seller_id is meant to be a FK to the salespeople table.
+  // This might require 'created_by' on the table and RLS checking that, or role-based RLS.
+  // For now, proceeding with the assumption that the calling context handles RLS appropriately.
+  const { data, error } = await supabase
+    .from('seller_targets')
+    .insert(targetData)
+    .select()
+    .single();
+  if (error) console.error('[addSellerTarget] Error:', error);
+  return { data, error };
+}
+
+export async function updateSellerTarget(
+  targetId: string,
+  targetData: UpdateSellerTargetData
+): Promise<{ data: SellerTarget | null; error: any }> {
+  // Similar RLS considerations as addSellerTarget.
+  const { data, error } = await supabase
+    .from('seller_targets')
+    .update(targetData)
+    .eq('id', targetId)
+    .select()
+    .single();
+  if (error) console.error(`[updateSellerTarget] Error updating ${targetId}:`, error);
+  return { data, error };
+}
+
+export async function deleteSellerTarget(
+  targetId: string
+): Promise<{ error: any }> {
+  // Similar RLS considerations.
+  const { error } = await supabase
+    .from('seller_targets')
+    .delete()
+    .eq('id', targetId);
+  if (error) console.error(`[deleteSellerTarget] Error deleting ${targetId}:`, error);
+  return { error };
+}
+
+export async function getSellerTargetForSellerAndMonth(
+  sellerId: string,
+  monthDate: string // Expects "YYYY-MM-DD", first day of month
+): Promise<SellerTarget | null> {
+  if (!sellerId || !monthDate || !monthDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    console.warn('[getSellerTargetForSellerAndMonth] Invalid sellerId or monthDate format provided.');
+    return null;
+  }
+  const { data, error } = await supabase
+    .from('seller_targets')
+    .select('*')
+    .eq('seller_id', sellerId)
+    .eq('month', monthDate)
+    .maybeSingle();
+
+  if (error) {
+    console.error(`[getSellerTargetForSellerAndMonth] Error fetching target for seller ${sellerId}, month ${monthDate}:`, error);
+    return null;
+  }
+  return data;
+}
+
+export async function getSellerTargetsForMonth(
+  monthDate: string // Expects "YYYY-MM-DD", first day of month
+): Promise<SellerTarget[]> {
+   if (!monthDate || !monthDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    console.warn('[getSellerTargetsForMonth] Invalid monthDate format provided.');
+    return [];
+  }
+  const { data, error } = await supabase
+    .from('seller_targets')
+    .select('*, salespeople(id, name, email, photo_url)') // Join with salespeople
+    .eq('month', monthDate);
+
+  if (error) {
+    console.error(`[getSellerTargetsForMonth] Error fetching targets for month ${monthDate}:`, error);
+    return [];
+  }
+  return data || [];
 }
 
 // --- Monthly Billing Reports ---
