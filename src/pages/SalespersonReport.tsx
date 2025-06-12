@@ -30,15 +30,14 @@ const SalespersonReport = () => {
   } = useQuery<SellerProfile | null, Error>({
     queryKey: ['sellerProfile', sellerId],
     queryFn: async () => {
-      if (!sellerId) return null; // Should not happen if route is defined correctly
+      if (!sellerId) return null;
       const { data, error: queryError } = await getSellerProfileById(sellerId);
       if (queryError) {
-        // Let React Query handle the error state based on what's thrown
         throw new Error(queryError.message || 'Erro ao buscar perfil do vendedor.');
       }
       return data;
     },
-    enabled: !!sellerId, // Only run query if sellerId is present
+    enabled: !!sellerId,
   });
 
   const {
@@ -47,7 +46,7 @@ const SalespersonReport = () => {
     isError: isErrorSalesRecords,
     error: errorSalesRecords
   } = useQuery<SaleRecord[], Error>({
-    queryKey: ['salesRecordsBySalesperson', sellerId, monthYearFilter], // Include filter in queryKey
+    queryKey: ['salesRecordsBySalesperson', sellerId, monthYearFilter],
     queryFn: () => {
       if (!sellerId) return [];
       return getSalesRecordsBySalesperson(sellerId, monthYearFilter ? { month_year: monthYearFilter } : undefined);
@@ -55,19 +54,70 @@ const SalespersonReport = () => {
     enabled: !!sellerId,
   });
 
+  const performanceMetrics = React.useMemo(() => {
+    if (!salesRecords || salesRecords.length === 0) {
+      return {
+        totalSalesAmount: 0,
+        numberOfSales: 0,
+        averageSaleAmount: 0,
+        totalNewCustomers: 0,
+      };
+    }
+    const totalSalesAmount = salesRecords.reduce((sum, record) => sum + record.amount, 0);
+    const numberOfSales = salesRecords.length;
+    const averageSaleAmount = numberOfSales > 0 ? totalSalesAmount / numberOfSales : 0;
+    const totalNewCustomers = salesRecords.filter(record => record.is_new_customer).length;
+    return {
+      totalSalesAmount,
+      numberOfSales,
+      averageSaleAmount,
+      totalNewCustomers,
+    };
+  }, [salesRecords]);
+
+  const chartData = React.useMemo(() => {
+    if (!salesRecords || salesRecords.length === 0) {
+      return [];
+    }
+    const salesByDate: { [date: string]: number } = {};
+    salesRecords.forEach(record => {
+      const dateObj = new Date(record.sale_date + 'T00:00:00');
+      const dateStr = dateObj.toLocaleDateString('en-CA');
+      salesByDate[dateStr] = (salesByDate[dateStr] || 0) + record.amount;
+    });
+    return Object.entries(salesByDate)
+      .map(([date, totalSales]) => ({ date, totalSales }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [salesRecords]);
+
+  const chartConfig = {
+    totalSales: {
+      label: "Vendas",
+      color: "hsl(var(--chart-1))",
+    },
+  } satisfies ChartConfig;
+
+  const getInitials = (name: string | undefined): string => {
+    if (!name) return 'N/A';
+    const names = name.split(' ');
+    if (names.length === 0 || !names[0]) return 'N/A';
+    return names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  // Conditional returns AFTER all hooks have been called
   if (isLoading || isLoadingSalesRecords) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center">
         <Navigation />
         <div className="flex-grow flex items-center justify-center">
           <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
-          <p className="ml-4 text-green-700 text-xl">Carregando dados do vendedor...</p> {/* Combined loading message */}
+          <p className="ml-4 text-green-700 text-xl">Carregando dados do vendedor...</p>
         </div>
       </div>
     );
   }
 
-  if (isError) {
+  if (isError) { // Error fetching seller profile
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex flex-col items-center justify-center">
         <Navigation />
@@ -86,7 +136,10 @@ const SalespersonReport = () => {
     );
   }
 
-  if (!seller) {
+  // Note: isErrorSalesRecords is handled inline where the sales records table/chart are rendered.
+  // If it were a fatal error for the whole page, it could be handled here too.
+
+  if (!seller) { // Seller not found after successful fetch (data is null)
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center">
         <Navigation />
@@ -105,67 +158,7 @@ const SalespersonReport = () => {
     );
   }
 
-  const getInitials = (name: string | undefined): string => {
-    if (!name) return 'N/A';
-    const names = name.split(' ');
-    if (names.length === 0 || !names[0]) return 'N/A';
-    return names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  };
-
-  const performanceMetrics = React.useMemo(() => {
-    if (!salesRecords || salesRecords.length === 0) {
-      return {
-        totalSalesAmount: 0,
-        numberOfSales: 0,
-        averageSaleAmount: 0,
-        totalNewCustomers: 0,
-      };
-    }
-
-    const totalSalesAmount = salesRecords.reduce((sum, record) => sum + record.amount, 0);
-    const numberOfSales = salesRecords.length;
-    const averageSaleAmount = numberOfSales > 0 ? totalSalesAmount / numberOfSales : 0;
-    const totalNewCustomers = salesRecords.filter(record => record.is_new_customer).length;
-
-    return {
-      totalSalesAmount,
-      numberOfSales,
-      averageSaleAmount,
-      totalNewCustomers,
-    };
-  }, [salesRecords]);
-
-  const chartData = React.useMemo(() => {
-    if (!salesRecords || salesRecords.length === 0) {
-      return [];
-    }
-    // Aggregate sales by date
-    const salesByDate: { [date: string]: number } = {};
-    salesRecords.forEach(record => {
-      // Ensure date is treated consistently, avoid timezone shifts if only date part is used
-      const dateObj = new Date(record.sale_date + 'T00:00:00');
-      const dateStr = dateObj.toLocaleDateString('en-CA'); // YYYY-MM-DD for sorting
-      salesByDate[dateStr] = (salesByDate[dateStr] || 0) + record.amount;
-    });
-
-    // Convert to array and sort by date
-    return Object.entries(salesByDate)
-      .map(([date, totalSales]) => ({
-        date,
-        totalSales,
-        // Format date for display in tooltip/axis if needed, or do it in tickFormatter
-        // formattedDate: new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', day: 'numeric', year: 'numeric' })
-       }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [salesRecords]);
-
-  const chartConfig = {
-    totalSales: {
-      label: "Vendas",
-      color: "hsl(var(--chart-1))", // Using a predefined color from shadcn/ui chart theme
-    },
-  } satisfies ChartConfig;
-
+  // Main component render
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
