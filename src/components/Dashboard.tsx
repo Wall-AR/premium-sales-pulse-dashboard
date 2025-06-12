@@ -130,7 +130,7 @@ export const Dashboard = () => {
                 <SalespersonRanking salespeople={salespeoplePerformanceData} />
               </div>
               <div className="lg:col-span-1">
-                <GoalProgress salespeople={salespeoplePerformanceData} />
+                <GoalProgress salespeople={salespeoplePerformanceData} kpiData={kpisData} />
               </div>
             </div>
           </div>
@@ -165,7 +165,8 @@ export const Dashboard = () => {
           <div className="lg:col-span-4">
             <Card className="bg-white shadow-xl border-green-100">
               <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-                <CardTitle className="flex items-center justify-between">
+                {/* Title: text-2xl font-bold (CardTitle by default is often text-2xl font-semibold) */}
+                <CardTitle className="flex items-center justify-between font-bold">
                   <div className="flex items-center">
                     <BarChart3 className="w-6 h-6 mr-3" />
                     Dashboard de Vendas

@@ -243,34 +243,37 @@ const SalespersonReport = () => {
               {/* Performance Metrics Display */}
               {salesRecords && !isLoadingSalesRecords && !isErrorSalesRecords && (
                 <div className="mb-8 pt-6 border-t border-gray-200">
-                   <h3 className="text-xl font-semibold text-gray-700 mb-4">Resumo de Performance</h3>
+                   {/* Section Title: text-2xl font-bold */}
+                   <h3 className="text-2xl font-bold text-gray-800 mb-4">Resumo de Performance</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card>
                       <CardHeader className="pb-2">
-                        <CardDescription>Total de Vendas</CardDescription>
-                        <CardTitle className="text-2xl">
-                          {performanceMetrics.totalSalesAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        {/* Label style for CardDescription */}
+                        <CardDescription className="text-sm text-gray-500">Total de Vendas</CardDescription>
+                        {/* Metric style for CardTitle (value) */}
+                        <CardTitle className="text-xl font-semibold text-green-700">
+                          {performanceMetrics.totalSalesAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </CardTitle>
                       </CardHeader>
                     </Card>
                     <Card>
                       <CardHeader className="pb-2">
-                        <CardDescription>Número de Vendas</CardDescription>
-                        <CardTitle className="text-2xl">{performanceMetrics.numberOfSales}</CardTitle>
+                        <CardDescription className="text-sm text-gray-500">Número de Vendas</CardDescription>
+                        <CardTitle className="text-xl font-semibold text-green-700">{performanceMetrics.numberOfSales}</CardTitle>
                       </CardHeader>
                     </Card>
                     <Card>
                       <CardHeader className="pb-2">
-                        <CardDescription>Ticket Médio</CardDescription>
-                        <CardTitle className="text-2xl">
-                          {performanceMetrics.averageSaleAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        <CardDescription className="text-sm text-gray-500">Ticket Médio</CardDescription>
+                        <CardTitle className="text-xl font-semibold text-green-700">
+                          {performanceMetrics.averageSaleAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </CardTitle>
                       </CardHeader>
                     </Card>
                     <Card>
                       <CardHeader className="pb-2">
-                        <CardDescription>Novos Clientes</CardDescription>
-                        <CardTitle className="text-2xl">{performanceMetrics.totalNewCustomers}</CardTitle>
+                        <CardDescription className="text-sm text-gray-500">Novos Clientes</CardDescription>
+                        <CardTitle className="text-xl font-semibold text-green-700">{performanceMetrics.totalNewCustomers}</CardTitle>
                       </CardHeader>
                     </Card>
                   </div>
@@ -279,7 +282,8 @@ const SalespersonReport = () => {
 
               {/* Sales Activity Table Section */}
               <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-xl font-semibold text-gray-700 mb-4">Registros de Vendas</h3> {/* Changed title */}
+                 {/* Section Title: text-2xl font-bold */}
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">Registros de Vendas</h3>
 
                 {/* Sales Trend Chart */}
                 {chartData.length > 1 && ( // Only show chart if there are multiple data points for a trend

@@ -51,57 +51,39 @@ export const KPICards = ({ data }: KPICardsProps) => {
   const kpis = [
     {
       title: "Total Vendido",
-      value: `R$ ${totalSold.toLocaleString('pt-BR')}`,
+      value: `R$ ${totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
       icon: DollarSign,
-      // color: "emerald", // Removed unused property
-      subtitle: totalGoal > 0 ? `↗ ${goalPercentage.toFixed(1)}% da meta` : "Meta não definida",
-      bgColor: "bg-white",
-      borderColor: "border-green-200"
+      subtitle: totalGoal > 0 ? `${goalPercentage.toFixed(0)}% da meta` : "Meta não definida",
     },
     {
-      title: "Total de Clientes", 
+      title: "Clientes Atendidos",
       value: totalClients.toLocaleString('pt-BR'),
       icon: Users,
-      // color: "emerald", // Removed unused property
-      subtitle: `👥 ${newClients} novos clientes`,
-      bgColor: "bg-white",
-      borderColor: "border-green-200"
+      subtitle: `${newClients.toLocaleString('pt-BR')} novos clientes`,
     },
     {
       title: "Ticket Médio",
-      value: `R$ ${globalAvgTicket.toLocaleString('pt-BR')}`,
+      value: `R$ ${globalAvgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
       icon: TrendingUp,
-      // color: "emerald", // Removed unused property
-      subtitle: "📊 Média por venda", // Changed subtitle for clarity
-      bgColor: "bg-white",
-      borderColor: "border-green-200"
+      subtitle: "Média por venda",
     },
     {
-      title: "Valor Faturado (Exemplo)", // Clarified this is an example
-      value: `R$ ${(totalSold * 0.8).toLocaleString('pt-BR')}`, // Example calculation
-      icon: Target,
-      // color: "gray", // Removed unused property
-      subtitle: `● R$ ${(totalSold * 0.2).toLocaleString('pt-BR')} (Exemplo Atraso)`, // Example calculation
-      bgColor: "bg-white",
-      borderColor: "border-green-200"
+      title: "Novos Clientes",
+      value: newClients.toLocaleString('pt-BR'),
+      icon: Users, // Reusing Users icon, or could be a specific "new user" icon like UserPlus
+      subtitle: "Conquistados no período",
     }
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {kpis.map((kpi, index) => (
-        <Card key={index} className={`${kpi.bgColor} shadow-lg border-2 ${kpi.borderColor} hover:shadow-xl transition-all duration-300 hover:scale-105`}>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-green-700 mb-2">{kpi.title}</p>
-                <p className="text-2xl font-bold text-green-800 mb-2">{kpi.value}</p>
-                <p className="text-xs text-green-600">{kpi.subtitle}</p>
-              </div>
-              <div className="ml-3">
-                <kpi.icon className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
+        <Card key={index} className="bg-white shadow-sm rounded-xl transition-shadow duration-300 hover:shadow-md">
+          <CardContent className="p-4 flex flex-col items-start gap-1">
+            <kpi.icon className="w-5 h-5 text-green-600 mb-1" /> {/* Icon color from spec is green-600 */}
+            <p className="text-sm text-gray-500">{kpi.title}</p> {/* Label style */}
+            <p className="text-xl font-semibold text-green-700">{kpi.value}</p> {/* Metric style */}
+            <p className="text-xs text-gray-500">{kpi.subtitle}</p> {/* Subtext style */}
           </CardContent>
         </Card>
       ))}

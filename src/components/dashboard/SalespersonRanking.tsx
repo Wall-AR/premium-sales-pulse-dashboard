@@ -75,16 +75,10 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
   const rankedSalespeople = salespeople;
 
   const getRankIcon = (position: number) => {
-    switch (position) {
-      case 0:
-        return <Crown className="w-5 h-5 text-yellow-500" />;
-      case 1:
-        return <Medal className="w-5 h-5 text-gray-400" />;
-      case 2:
-        return <Medal className="w-5 h-5 text-amber-600" />;
-      default:
-        return <span className="text-sm font-bold text-gray-500">#{position + 1}</span>;
-    }
+    if (position === 0) return <span role="img" aria-label="gold medal" className="text-xl">🥇</span>;
+    if (position === 1) return <span role="img" aria-label="silver medal" className="text-xl">🥈</span>;
+    if (position === 2) return <span role="img" aria-label="bronze medal" className="text-xl">🥉</span>;
+    return <span className="text-sm font-semibold text-gray-500 w-5 text-center">#{position + 1}</span>;
   };
 
   const getProgressColor = (goalPercentage: number) => {
@@ -106,13 +100,13 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
   };
 
   return (
-    <Card className="bg-white shadow-sm">
-      <CardHeader className="bg-gray-50 border-b">
-        <CardTitle className="flex items-center text-gray-700">
-          <span className="text-emerald-600 mr-2">🏆</span>
+    <Card className="bg-white rounded-xl shadow-md">
+      <CardHeader className="bg-gray-50 border-b p-4">
+        <CardTitle className="flex items-center text-lg font-bold text-gray-800"> {/* Title: text-lg font-bold */}
+          <span className="text-emerald-600 mr-2 text-xl">🏆</span> {/* Adjusted icon size slightly */}
           Ranking de Vendedores
-          <span className="ml-2 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full font-medium">
-            Atualizado
+          <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full font-semibold"> {/* Subtitle font-semibold */}
+            Top Performers
           </span>
         </CardTitle>
       </CardHeader>
@@ -120,9 +114,9 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
         <div className="space-y-3">
           {rankedSalespeople.map((person, index) => (
               <div
-                key={person.id} // Use id as key
+                key={person.id}
                 onClick={() => handlePersonClick(person)}
-                className="p-3 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"
+                className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors hover:shadow-sm"
               >
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 flex items-center justify-center w-6">
@@ -130,7 +124,7 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
                   </div>
                   
                   <Avatar className="w-10 h-10 border-2 border-gray-200">
-                    <AvatarImage src={person.photo_url || undefined} alt={person.name} /> {/* Use person.photo_url */}
+                    <AvatarImage src={person.photo_url || undefined} alt={person.name} />
                     <AvatarFallback className="bg-emerald-100 text-emerald-600 font-semibold text-sm">
                       {person.name ? person.name.split(' ').map(n => n[0]).join('') : 'N/A'}
                     </AvatarFallback>
@@ -139,14 +133,14 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-gray-800 text-sm">{person.name || 'Vendedor Desconhecido'}</h3>
-                      <p className="text-sm text-emerald-600 font-semibold">
-                        R$ {person.total_sales_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {/* Sales Value as Metric */}
+                      <p className="text-xl font-semibold text-green-700">
+                        {person.total_sales_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </p>
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500"> {/* Number of sales as subtext/label */}
                       {person.number_of_sales} venda(s)
                     </p>
-                    {/* Challenge/Mega status could be re-added here if present in SalespersonPerformance */}
                   </div>
                 </div>
               </div>

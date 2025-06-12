@@ -17,7 +17,8 @@ export const DashboardFilters: React.FC<DashboardFiltersProps> = ({ onMonthYearC
     <Card className="rounded-xl shadow-md bg-white">
       <CardContent className="p-4 space-y-6">
         <div className="mb-6"> {/* Período Section */}
-          <Label htmlFor="month_year_filter" className="text-sm font-medium text-gray-700 flex items-center mb-1">
+          {/* Label: text-sm text-gray-500 (font-normal implied) */}
+          <Label htmlFor="month_year_filter" className="text-sm text-gray-500 flex items-center mb-1">
             <Calendar className="w-4 h-4 mr-2 text-gray-500" />
             Período (Mês/Ano)
           </Label>
@@ -41,7 +42,8 @@ export const DashboardFilters: React.FC<DashboardFiltersProps> = ({ onMonthYearC
         </div>
 
         <div className="mb-6"> {/* Vendedor Section */}
-          <Label className="text-sm font-medium text-gray-700 flex items-center mb-1">
+          {/* Label: text-sm text-gray-500 (font-normal implied) */}
+          <Label className="text-sm text-gray-500 flex items-center mb-1">
             <Users className="w-4 h-4 mr-2 text-gray-500" />
             Vendedor
           </Label>
@@ -59,7 +61,8 @@ export const DashboardFilters: React.FC<DashboardFiltersProps> = ({ onMonthYearC
         </div>
 
         <div> {/* Tipo de Cliente Section - last item, mb-6 removed or could be smaller */}
-          <Label className="text-sm font-medium text-gray-700 flex items-center mb-1">
+          {/* Label: text-sm text-gray-500 (font-normal implied) */}
+          <Label className="text-sm text-gray-500 flex items-center mb-1">
             <Tag className="w-4 h-4 mr-2 text-gray-500" />
             Tipo de Cliente
           </Label>
