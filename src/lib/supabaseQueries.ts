@@ -285,6 +285,7 @@ export interface SellerProfile {
 export interface SalespersonPerformance extends SellerProfile {
   total_sales_amount: number;
   number_of_sales: number;
+  previous_period_total_sales_amount?: number; // Added for trend
 }
 
 export async function getAllSellerProfiles(): Promise<SellerProfile[]> {
@@ -435,48 +436,73 @@ export async function deleteSellerProfile(
 }
 
 
-export async function getDailySales(month_year_filter?: string): Promise<DailySale[]> {
+export async function getDailySales(month_year_filter?: string): Promise<{ currentMonthSales: DailySale[], previousMonthSales: DailySale[] }> {
   let targetMonthYear = month_year_filter;
+  const emptyReturn = { currentMonthSales: [], previousMonthSales: [] };
 
   if (!targetMonthYear) {
-    // Fetch the latest month_year from the kpis table
-    const { data: kpiMonthData, error: kpiError } = await supabase
+    const { data: kpiData, error: kpiError } = await supabase
       .from('kpis')
       .select('month_year')
       .order('month_year', { ascending: false })
-      .limit(1);
+      .limit(1)
+      .single(); // Use single to get one object or null
 
-    if (kpiError) {
-      console.error('Failed to fetch latest month_year from kpis for getDailySales due to query error:', kpiError);
-      return []; // Return empty array as per original error handling
+    if (kpiError || !kpiData?.month_year) {
+      console.error('Failed to fetch latest month_year from kpis for getDailySales. Returning empty arrays.', kpiError);
+      return emptyReturn;
     }
-    if (!kpiMonthData || kpiMonthData.length === 0 || !kpiMonthData[0]?.month_year) {
-      console.warn('Failed to fetch latest month_year from kpis for getDailySales (no data or month_year field missing). Returning empty array.');
-      return []; // Return empty array
-    }
-    targetMonthYear = kpiMonthData[0].month_year;
-    console.log("Using month_year from kpis for getDailySales:", targetMonthYear);
+    targetMonthYear = kpiData.month_year;
+    console.log("[getDailySales] Using latest month_year from kpis:", targetMonthYear);
   }
 
   if (!targetMonthYear) {
-    console.error('Could not determine month_year for filtering daily sales.');
-    return [];
+    console.error('[getDailySales] Could not determine targetMonthYear. Returning empty arrays.');
+    return emptyReturn;
   }
 
-  // The daily_sales table has a 'date' column (full date) and a 'month_year' column for filtering.
-  // We filter by 'month_year' to get all sales for that month.
-  const { data, error } = await supabase
+  // Calculate previousMonthYear
+  let previousMonthYear = '';
+  const [year, month] = targetMonthYear.split('-').map(Number);
+  const targetDate = new Date(year, month - 1, 1); // month is 0-indexed for Date constructor
+  targetDate.setMonth(targetDate.getMonth() - 1);
+  const prevYear = targetDate.getFullYear();
+  const prevMonth = (targetDate.getMonth() + 1).toString().padStart(2, '0'); // month back to 1-indexed for YYYY-MM
+  previousMonthYear = `${prevYear}-${prevMonth}`;
+  console.log(`[getDailySales] Target month: ${targetMonthYear}, Previous month: ${previousMonthYear}`);
+
+  // Fetch Current Month Sales
+  const { data: currentMonthData, error: currentError } = await supabase
     .from('daily_sales')
     .select('date, sales, goal')
     .eq('month_year', targetMonthYear)
-    .order('date', { ascending: true }); // Order by date to have them in sequence
+    .order('date', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching daily sales:', error);
-    return [];
+  if (currentError) {
+    console.error(`[getDailySales] Error fetching daily sales for target month ${targetMonthYear}:`, currentError);
+    return emptyReturn; // Return empty for both if current month fails
+  }
+  const currentMonthSales = currentMonthData || [];
+
+  // Fetch Previous Month Sales
+  let previousMonthSales: DailySale[] = [];
+  if (previousMonthYear) {
+    const { data: previousMonthData, error: previousError } = await supabase
+      .from('daily_sales')
+      .select('date, sales, goal') // Not selecting 'goal' for previous month as per original thought, but can be added if needed for comparison
+      .eq('month_year', previousMonthYear)
+      .order('date', { ascending: true });
+
+    if (previousError) {
+      console.error(`[getDailySales] Error fetching daily sales for previous month ${previousMonthYear}:`, previousError);
+      // If previous month fails, we still return current month's data
+    } else {
+      previousMonthSales = previousMonthData || [];
+    }
   }
 
-  return data || [];
+  console.log(`[getDailySales] Fetched ${currentMonthSales.length} records for current month (${targetMonthYear}) and ${previousMonthSales.length} for previous month (${previousMonthYear}).`);
+  return { currentMonthSales, previousMonthSales };
 }
 
 export async function getSalespeopleWithPerformance(
@@ -496,62 +522,192 @@ export async function getSalespeopleWithPerformance(
     return [];
   }
 
-  // 2. Fetch relevant sales records
-  // Note: RLS policies will apply to this query.
-  let salesQuery = supabase.from('sales_records').select('salesperson_id, amount, sale_date'); // Added sale_date for filtering
+  // 2. Determine date ranges for current and previous periods if month_year_filter is provided
+  let targetStartDate: string | undefined, targetEndDate: string | undefined;
+  let previousStartDate: string | undefined, previousEndDate: string | undefined;
 
-  // Apply month_year_filter if provided.
-  // This assumes sale_date is stored in 'YYYY-MM-DD' format.
-  // And month_year_filter is 'YYYY-MM'.
-  if (month_year_filter) {
-    // Ensure the filter only applies if the month_year_filter is a valid string.
-    if (typeof month_year_filter === 'string' && month_year_filter.match(/^\d{4}-\d{2}$/)) {
-         // Get the first day of the month
-        const startDate = `${month_year_filter}-01`;
-        // Get the last day of the month
-        const year = parseInt(month_year_filter.substring(0, 4));
-        const month = parseInt(month_year_filter.substring(5, 7));
-        const lastDay = new Date(year, month, 0).getDate(); // Day before the 1st of next month
-        const endDate = `${month_year_filter}-${String(lastDay).padStart(2, '0')}`;
+  if (month_year_filter && typeof month_year_filter === 'string' && month_year_filter.match(/^\d{4}-\d{2}$/)) {
+    const year = parseInt(month_year_filter.substring(0, 4));
+    const month = parseInt(month_year_filter.substring(5, 7)); // 1-indexed month
 
-        salesQuery = salesQuery.gte('sale_date', startDate).lte('sale_date', endDate);
-        console.log(`[getSalespeopleWithPerformance] Filtering sales from ${startDate} to ${endDate}`);
+    targetStartDate = `${month_year_filter}-01`;
+    const targetMonthLastDay = new Date(year, month, 0).getDate();
+    targetEndDate = `${month_year_filter}-${String(targetMonthLastDay).padStart(2, '0')}`;
+
+    const prevMonthDate = new Date(year, month - 1, 1); // month-1 for 0-indexed month
+    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+    const prevYear = prevMonthDate.getFullYear();
+    const prevMonth = (prevMonthDate.getMonth() + 1).toString().padStart(2, '0'); // Back to 1-indexed
+    previousStartDate = `${prevYear}-${prevMonth}-01`;
+    const prevMonthLastDay = new Date(prevYear, parseInt(prevMonth), 0).getDate();
+    previousEndDate = `${prevYear}-${prevMonth}-${String(prevMonthLastDay).padStart(2, '0')}`;
+
+    console.log(`[getSalespeopleWithPerformance] Current period: ${targetStartDate} to ${targetEndDate}`);
+    console.log(`[getSalespeopleWithPerformance] Previous period: ${previousStartDate} to ${previousEndDate}`);
+  } else if (month_year_filter) {
+    console.warn('[getSalespeopleWithPerformance] Invalid month_year_filter format. Fetching all-time sales data. Expected YYYY-MM, got:', month_year_filter);
+  } else {
+    console.log('[getSalespeopleWithPerformance] No month_year_filter. Fetching all-time sales data.');
+  }
+
+  // 3. Fetch all sales records (RLS will apply). We will filter client-side or could make this more complex.
+  // For simplicity with potentially two date ranges, fetching all relevant sales and filtering might be easier than complex OR queries.
+  // However, for performance with large datasets, two separate queries filtered by date ranges would be better. Let's do two queries.
+
+  let currentPeriodSalesRecords: SaleRecord[] = [];
+  if (targetStartDate && targetEndDate) {
+    const { data, error } = await supabase
+      .from('sales_records')
+      .select('salesperson_id, amount, sale_date')
+      .gte('sale_date', targetStartDate)
+      .lte('sale_date', targetEndDate);
+    if (error) {
+      console.error('Error fetching current period sales records:', error);
+      // Decide if we should return empty or proceed without this data
     } else {
-        console.warn('[getSalespeopleWithPerformance] Invalid month_year_filter format. Skipping date filter. Expected YYYY-MM, got:', month_year_filter);
+      currentPeriodSalesRecords = data || [];
+    }
+  } else if (!month_year_filter) { // Fetch all if no filter
+    const { data, error } = await supabase.from('sales_records').select('salesperson_id, amount, sale_date');
+    if (error) console.error('Error fetching all sales records:', error);
+    else currentPeriodSalesRecords = data || [];
+  }
+  // If month_year_filter was invalid, currentPeriodSalesRecords remains empty, leading to 0 sales for current period.
+
+  let previousPeriodSalesRecords: SaleRecord[] = [];
+  if (previousStartDate && previousEndDate) {
+    const { data, error } = await supabase
+      .from('sales_records')
+      .select('salesperson_id, amount') // Only need amount for previous period sum
+      .gte('sale_date', previousStartDate)
+      .lte('sale_date', previousEndDate);
+    if (error) {
+      console.error('Error fetching previous period sales records:', error);
+    } else {
+      previousPeriodSalesRecords = data || [];
     }
   }
 
-  const { data: salesRecords, error: salesError } = await salesQuery;
+  console.log(`[getSalespeopleWithPerformance] Fetched ${sellerProfiles.length} seller profiles.`);
+  console.log(`[getSalespeopleWithPerformance] Fetched ${currentPeriodSalesRecords.length} current period sales records.`);
+  console.log(`[getSalespeopleWithPerformance] Fetched ${previousPeriodSalesRecords.length} previous period sales records.`);
 
-  if (salesError) {
-    console.error('Error fetching sales records for performance data:', salesError);
-    // Return profiles with zero sales if sales records fetch fails
-    return sellerProfiles.map(profile => ({
-      ...profile,
-      total_sales_amount: 0,
-      number_of_sales: 0,
-    }));
-  }
-
-  console.log('[getSalespeopleWithPerformance] Fetched sellerProfiles:', sellerProfiles.length);
-  console.log('[getSalespeopleWithPerformance] Fetched salesRecords:', salesRecords?.length || 0);
-
-  // 3. Combine data
+  // 4. Combine data
   const performanceData: SalespersonPerformance[] = sellerProfiles.map(profile => {
-    const relevantSales = salesRecords?.filter(sr => sr.salesperson_id === profile.id) || [];
-    const total_sales_amount = relevantSales.reduce((sum, sr) => sum + (sr.amount || 0), 0);
-    const number_of_sales = relevantSales.length;
+    const currentSales = currentPeriodSalesRecords.filter(sr => sr.salesperson_id === profile.id);
+    const total_sales_amount = currentSales.reduce((sum, sr) => sum + (sr.amount || 0), 0);
+    const number_of_sales = currentSales.length;
+
+    let previous_period_total_sales_amount: number | undefined = undefined;
+    if (previousStartDate && previousEndDate) { // Only calculate if previous period was defined
+      const previousSales = previousPeriodSalesRecords.filter(sr => sr.salesperson_id === profile.id);
+      previous_period_total_sales_amount = previousSales.reduce((sum, sr) => sum + (sr.amount || 0), 0);
+    }
 
     return {
       ...profile,
       total_sales_amount,
       number_of_sales,
+      previous_period_total_sales_amount,
     };
   });
 
-  // Optional: sort by performance (e.g., total sales amount)
   performanceData.sort((a, b) => b.total_sales_amount - a.total_sales_amount);
 
-  console.log('[getSalespeopleWithPerformance] Processed performanceData:', performanceData.length);
+  console.log('[getSalespeopleWithPerformance] Processed performanceData count:', performanceData.length);
   return performanceData;
+}
+
+// --- Monthly Billing Reports ---
+
+export interface BillingStatement {
+  id: string; // UUID
+  month_year: string; // "YYYY-MM"
+  faturamento_released: number;
+  faturamento_atr: number;
+  notes?: string | null;
+  created_by?: string | null; // UUID from auth.users
+  updated_by?: string | null; // UUID from auth.users
+  created_at: string; // ISO timestamp
+  updated_at: string; // ISO timestamp
+}
+
+// Type for inserting new billing statements
+export type NewBillingStatementData = Omit<BillingStatement, 'id' | 'created_at' | 'updated_at' | 'updated_by'> & {
+  created_by: string; // Ensure created_by is required on creation
+};
+
+// Type for updating, requiring updated_by
+export type UpdateBillingStatementData = Partial<Omit<BillingStatement, 'id' | 'created_at' | 'updated_at' | 'created_by'>> & {
+  updated_by: string; // Ensure updated_by is required on update
+};
+
+export async function addBillingStatement(
+  statementData: NewBillingStatementData
+): Promise<{ data: BillingStatement | null; error: any }> {
+  const { data, error } = await supabase
+    .from('monthly_billing_reports')
+    .insert(statementData)
+    .select()
+    .single();
+  if (error) console.error('[addBillingStatement] Error:', error);
+  return { data, error };
+}
+
+export async function updateBillingStatement(
+  id: string,
+  statementData: UpdateBillingStatementData
+): Promise<{ data: BillingStatement | null; error: any }> {
+  const { data, error } = await supabase
+    .from('monthly_billing_reports')
+    .update(statementData)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) console.error(`[updateBillingStatement] Error updating ${id}:`, error);
+  return { data, error };
+}
+
+export async function deleteBillingStatement(
+  id: string
+): Promise<{ error: any }> {
+  const { error } = await supabase
+    .from('monthly_billing_reports')
+    .delete()
+    .eq('id', id);
+  if (error) console.error(`[deleteBillingStatement] Error deleting ${id}:`, error);
+  return { error };
+}
+
+export async function getBillingStatementForMonth(
+  month_year: string // "YYYY-MM"
+): Promise<BillingStatement | null> {
+  if (!month_year || !month_year.match(/^\d{4}-\d{2}$/)) {
+      console.warn('[getBillingStatementForMonth] Invalid month_year format provided:', month_year);
+      return null;
+  }
+  const { data, error } = await supabase
+    .from('monthly_billing_reports')
+    .select('*')
+    .eq('month_year', month_year)
+    .maybeSingle(); // Use maybeSingle as a month might not have a report yet
+
+  if (error) {
+    console.error(`[getBillingStatementForMonth] Error fetching report for ${month_year}:`, error);
+    return null;
+  }
+  return data;
+}
+
+export async function getAllBillingStatements(): Promise<BillingStatement[]> {
+  const { data, error } = await supabase
+    .from('monthly_billing_reports')
+    .select('*')
+    .order('month_year', { ascending: false });
+
+  if (error) {
+    console.error('[getAllBillingStatements] Error fetching reports:', error);
+    return [];
+  }
+  return data || [];
 }

@@ -1,8 +1,10 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Crown, Medal, Info } from "lucide-react"; // Removed ShieldCheck, Star
+import { Crown, Medal, Info, ArrowUp, ArrowDown } from "lucide-react"; // Added ArrowUp, ArrowDown
 import { useNavigate } from "react-router-dom";
 import type { SalespersonPerformance } from "@/lib/supabaseQueries";
+import { useAuth } from "@/contexts/AuthContext";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Added Tooltip components
 
 interface SalespersonRankingProps {
   salespeople: SalespersonPerformance[] | null | undefined;
@@ -36,6 +38,7 @@ const SalespersonSkeleton: React.FC = () => {
 
 export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth(); // Get current user
 
   if (salespeople === undefined) {
     return (
@@ -112,11 +115,17 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
       </CardHeader>
       <CardContent className="p-4">
         <div className="space-y-3">
-          {rankedSalespeople.map((person, index) => (
+          {rankedSalespeople.map((person, index) => {
+            const isCurrentUser = currentUser?.email === person.email;
+            return (
               <div
                 key={person.id}
                 onClick={() => handlePersonClick(person)}
-                className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.02]"
+                className={`p-3 rounded-lg border hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.02]
+                  ${isCurrentUser
+                    ? 'bg-secondary-green/50 border-primary-green ring-2 ring-primary-green'
+                    : 'border-gray-200'
+                  }`}
               >
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 flex items-center justify-center w-6">
@@ -125,26 +134,61 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
                   
                   <Avatar className="w-10 h-10 border-2 border-gray-200">
                     <AvatarImage src={person.photo_url || undefined} alt={person.name} />
-                    <AvatarFallback className="bg-emerald-100 text-emerald-600 font-semibold text-sm">
+                    <AvatarFallback className={`font-semibold text-sm ${isCurrentUser ? 'bg-primary-green text-white' : 'bg-secondary-green text-primary-green'}`}>
                       {person.name ? person.name.split(' ').map(n => n[0]).join('') : 'N/A'}
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-gray-800 text-sm">{person.name || 'Vendedor Desconhecido'}</h3>
-                      {/* Sales Value as Metric */}
-                      <p className="text-xl font-semibold text-green-700">
-                        {person.total_sales_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </p>
+                      <div className="flex items-center">
+                        <h3 className="font-semibold text-gray-800 text-sm">{person.name || 'Vendedor Desconhecido'}</h3>
+                        {isCurrentUser && (
+                          <span className="ml-2 text-xs font-semibold text-white bg-primary-green px-2 py-0.5 rounded-full">
+                            Você
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center"> {/* Wrapper for amount and trend */}
+                        <p className="text-xl font-semibold text-primary-green">
+                          {person.total_sales_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </p>
+                        {typeof person.previous_period_total_sales_amount === 'number' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={`ml-2 text-xs flex items-center font-semibold
+                                  ${person.total_sales_amount >= person.previous_period_total_sales_amount
+                                    ? 'text-green-600' // Positive or same
+                                    : 'text-red-600'   // Negative
+                                  }`}>
+                                  {person.total_sales_amount >= person.previous_period_total_sales_amount ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                                  {(() => {
+                                    if (person.previous_period_total_sales_amount === 0) {
+                                      return person.total_sales_amount > 0 ? "∞%" : "0%"; // Infinite growth or no change from zero
+                                    }
+                                    const change = ((person.total_sales_amount - person.previous_period_total_sales_amount) / person.previous_period_total_sales_amount) * 100;
+                                    return `${Math.abs(change).toFixed(0)}%`;
+                                  })()}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-gray-800 text-white border-gray-700">
+                                <p>Comparado ao período anterior</p>
+                                <p className="text-xs">Mês Anterior: {person.previous_period_total_sales_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500"> {/* Number of sales as subtext/label */}
+                    <p className="text-xs text-gray-500">
                       {person.number_of_sales} venda(s)
                     </p>
                   </div>
                 </div>
               </div>
-            ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
