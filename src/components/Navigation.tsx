@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Plus, Users, Settings, Bell, UserCircle } from "lucide-react";
+import { Home, Plus, Users, Settings, Bell, UserCircle, ClipboardList, Building } from "lucide-react"; // Added Building
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -14,9 +14,11 @@ export const Navigation = () => {
 
   const navItems = [
     { path: "/", icon: Home, label: "Dashboard" },
+    { path: "/company-report", icon: Building, label: "Empresa" }, // New Item
     { path: "/sales-entry", icon: Plus, label: "Nova Venda" },
+    { path: "/faturamento", icon: ClipboardList, label: "Faturamento" },
     { path: "/seller-management", icon: Users, label: "Vendedores" },
-    { path: "/configuration", icon: Settings, label: "Configurações" },
+    { path: "/configuration", icon: Settings, label: "Configurações" }
   ];
 
   return (
