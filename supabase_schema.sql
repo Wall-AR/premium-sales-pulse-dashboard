@@ -5,6 +5,15 @@
 -- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 
+-- Function to update the updated_at column
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = NOW();
+   RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 -- Table for unique seller profiles
 CREATE TABLE public.salespeople (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
@@ -173,3 +182,46 @@ CREATE POLICY "Allow users to insert their own activity logs"
 --   TO authenticated
 --   USING (is_admin(auth.uid())); -- Replace is_admin with your actual role check
 -- For now, no general SELECT policy is added to keep it more secure by default.
+
+-- Table for Monthly Billing Reports
+CREATE TABLE public.monthly_billing_reports (
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
+    month_year TEXT NOT NULL UNIQUE, -- "YYYY-MM" format, unique constraint
+    faturamento_released NUMERIC NOT NULL DEFAULT 0,
+    faturamento_atr NUMERIC NOT NULL DEFAULT 0,
+    notes TEXT,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- Or ON DELETE RESTRICT
+    updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- Or ON DELETE RESTRICT
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+COMMENT ON TABLE public.monthly_billing_reports IS 'Stores manually entered monthly billing figures (released and late).';
+ALTER TABLE public.monthly_billing_reports ENABLE ROW LEVEL SECURITY;
+
+-- Trigger to automatically update updated_at on row update
+CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.monthly_billing_reports
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- RLS Policies for 'monthly_billing_reports' table
+
+CREATE POLICY "Allow authenticated users to select all monthly billing reports"
+  ON public.monthly_billing_reports FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Allow authenticated users to insert monthly billing reports"
+  ON public.monthly_billing_reports FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = created_by);
+
+CREATE POLICY "Allow authenticated users to update their own or any monthly billing reports" -- Or make more restrictive
+  ON public.monthly_billing_reports FOR UPDATE
+  TO authenticated
+  USING (true) -- Allows updating any record if they can select it (which is all for now)
+  WITH CHECK (auth.uid() = updated_by); -- Must set themselves as updater
+
+CREATE POLICY "Allow creator to delete their monthly billing reports"
+  ON public.monthly_billing_reports FOR DELETE
+  TO authenticated
+  USING (auth.uid() = created_by);

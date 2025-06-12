@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Users, Target, TrendingUp, SlidersHorizontal } from "lucide-react"; // Added SlidersHorizontal
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getKPIs, getDailySales, getSalespeopleWithPerformance } from "@/lib/supabaseQueries";
-import type { KPI, DailySale, SalespersonPerformance } from "@/lib/supabaseQueries";
+import { getKPIs, getDailySales, getSalespeopleWithPerformance, getBillingStatementForMonth } from "@/lib/supabaseQueries"; // Import added
+import type { KPI, DailySale, SalespersonPerformance, BillingStatement } from "@/lib/supabaseQueries"; // Import added
 import {
   Sheet,
   SheetContent,
@@ -39,6 +39,23 @@ export const Dashboard = () => {
   } = useQuery<KPI | null, Error, KPI | null, ['kpis', { month_year?: string }]>(
     { queryKey: ['kpis', activeFilters], queryFn: () => getKPIs(activeFilters.month_year) }
   );
+
+  const {
+    data: billingStatementData,
+    isLoading: isLoadingBillingStatement,
+    // error: errorBillingStatement // Add if specific error handling needed
+  } = useQuery<BillingStatement | null, Error>({
+    queryKey: ['billingStatementForMonth', activeFilters.month_year],
+    queryFn: () => {
+      if (!activeFilters.month_year) {
+        console.log('[Dashboard.tsx] No month_year filter set for billing statement, returning null.');
+        return null;
+      }
+      console.log('[Dashboard.tsx] Fetching billing statement for month:', activeFilters.month_year);
+      return getBillingStatementForMonth(activeFilters.month_year);
+    },
+    enabled: !!activeFilters.month_year,
+  });
 
   // Log Before useQuery for salespeoplePerformanceData
   console.log('[Dashboard.tsx] Initializing. activeFilters:', JSON.stringify(activeFilters, null, 2));
@@ -77,9 +94,9 @@ export const Dashboard = () => {
     { id: 'analysis', label: 'Análise', icon: Target }
   ];
 
-  if (kpisLoading || salespeopleLoading || dailySalesLoading) {
+  if (kpisLoading || salespeopleLoading || dailySalesLoading || isLoadingBillingStatement) { // Added isLoadingBillingStatement
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex flex-col">
+      <div className="min-h-screen bg-neutral-bg flex flex-col"> {/* Ensure neutral-bg is used */}
         <Navigation />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
@@ -131,7 +148,8 @@ export const Dashboard = () => {
       case 'overview':
         return (
           <div className="space-y-6">
-            <KPICards data={kpisData} />
+            {/* Pass billingData and activeMonthYear to KPICards */}
+            <KPICards kpiData={kpisData} billingData={billingStatementData} activeMonthYear={activeFilters.month_year} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <SalespersonRanking salespeople={salespeoplePerformanceData} />
