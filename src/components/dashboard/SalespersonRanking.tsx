@@ -100,10 +100,10 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
   };
 
   return (
-    <Card className="bg-white rounded-xl shadow-md">
+    <Card className="bg-white rounded-xl shadow-md transition-all duration-200 hover:scale-105 hover:shadow-lg">
       <CardHeader className="bg-gray-50 border-b p-4">
-        <CardTitle className="flex items-center text-lg font-bold text-gray-800"> {/* Title: text-lg font-bold */}
-          <span className="text-emerald-600 mr-2 text-xl">🏆</span> {/* Adjusted icon size slightly */}
+        <CardTitle className="flex items-center text-lg font-bold text-gray-800">
+          <span className="text-emerald-600 mr-2 text-xl">🏆</span>
           Ranking de Vendedores
           <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full font-semibold"> {/* Subtitle font-semibold */}
             Top Performers
@@ -116,7 +116,7 @@ export const SalespersonRanking = ({ salespeople }: SalespersonRankingProps) => 
               <div
                 key={person.id}
                 onClick={() => handlePersonClick(person)}
-                className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors hover:shadow-sm"
+                className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.02]"
               >
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 flex items-center justify-center w-6">

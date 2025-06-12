@@ -113,7 +113,7 @@ const Configuration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    <div className="min-h-screen bg-neutral-bg"> {/* Updated background */}
       <Navigation />
       
       {/* Adjusted top padding: py-20 became pt-[100px] pb-20 */}
@@ -124,27 +124,27 @@ const Configuration = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate("/")}
-                className="mr-4 hover:bg-green-100 text-green-700"
+                className="mr-4 hover:bg-gray-100 text-gray-700" // Neutral
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Voltar ao Dashboard
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-green-800">Configuração da Equipe</h1>
-                <p className="text-green-600">Gerencie vendedores e suas metas</p>
+                <h1 className="text-3xl font-bold text-gray-800">Configuração da Equipe</h1> {/* Neutral */}
+                <p className="text-gray-600">Gerencie vendedores e suas metas</p> {/* Neutral */}
               </div>
             </div>
             
             <div className="text-right">
-              <p className="text-sm text-green-600">Meta Total da Empresa</p>
-              <p className="text-2xl font-bold text-green-800">R$ {totalGoals.toLocaleString('pt-BR')}</p>
+              <p className="text-sm text-gray-600">Meta Total da Empresa</p> {/* Neutral */}
+              <p className="text-2xl font-bold text-gray-800">R$ {totalGoals.toLocaleString('pt-BR')}</p> {/* Neutral */}
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Vendedores Existentes */}
             <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+              <CardHeader className="bg-primary-green text-white"> {/* Primary Green */}
                 <CardTitle className="flex items-center">
                   <Users className="w-6 h-6 mr-2" />
                   Equipe Atual ({salespeople.length})
@@ -153,11 +153,11 @@ const Configuration = () => {
               <CardContent className="p-6 max-h-96 overflow-y-auto">
                 <div className="space-y-4">
                   {salespeople.map((person, index) => (
-                    <div key={person.id} className="p-4 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"> {/* Use person.id as key */}
+                    <div key={person.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"> {/* Neutral border */}
                       <div className="flex items-center space-x-4 mb-4">
-                        <Avatar className="w-12 h-12 border-2 border-green-300">
+                        <Avatar className="w-12 h-12 border-2 border-gray-300"> {/* Neutral border */}
                           <AvatarImage src={person.photo} />
-                          <AvatarFallback className="bg-green-100 text-green-700">
+                          <AvatarFallback className="bg-secondary-green text-primary-green"> {/* Secondary/Primary for fallback */}
                             {person.name ? person.name.split(' ').map(n => n[0]).join('') : 'N/A'}
                           </AvatarFallback>
                         </Avatar>
@@ -165,14 +165,14 @@ const Configuration = () => {
                           <Input
                             value={person.name}
                             onChange={(e) => handleUpdatePerson(index, 'name', e.target.value)}
-                            className="font-semibold border-green-200 focus:border-green-500"
+                            className="font-semibold border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                           />
                         </div>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleRemovePerson(index)}
-                          className="text-red-600 hover:bg-red-50 border-red-300"
+                          className="text-red-600 hover:bg-red-50 border-red-300" // Destructive colors fine
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -180,30 +180,30 @@ const Configuration = () => {
                       
                       <div className="grid grid-cols-3 gap-3 text-sm">
                         <div>
-                          <Label className="text-green-700">Meta</Label>
+                          <Label className="text-gray-700">Meta</Label> {/* Neutral label */}
                           <Input
                             type="number"
-                            value={person.goal || 0} // Use person.goal || 0 for safety
+                            value={person.goal || 0}
                             onChange={(e) => handleUpdatePerson(index, 'goal', parseInt(e.target.value) || 0)}
-                            className="text-xs border-green-200 focus:border-green-500"
+                            className="text-xs border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                           />
                         </div>
                         <div>
-                          <Label className="text-green-700">Desafio</Label>
+                          <Label className="text-gray-700">Desafio</Label> {/* Neutral label */}
                           <Input
                             type="number"
-                            value={person.challenge || 0} // Use person.challenge || 0 for safety
+                            value={person.challenge || 0}
                             onChange={(e) => handleUpdatePerson(index, 'challenge', parseInt(e.target.value) || 0)}
-                            className="text-xs border-green-200 focus:border-green-500"
+                            className="text-xs border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                           />
                         </div>
                         <div>
-                          <Label className="text-green-700">Mega</Label>
+                          <Label className="text-gray-700">Mega</Label> {/* Neutral label */}
                           <Input
                             type="number"
-                            value={person.mega || 0} // Use person.mega || 0 for safety
+                            value={person.mega || 0}
                             onChange={(e) => handleUpdatePerson(index, 'mega', parseInt(e.target.value) || 0)}
-                            className="text-xs border-green-200 focus:border-green-500"
+                            className="text-xs border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                           />
                         </div>
                       </div>
@@ -215,7 +215,7 @@ const Configuration = () => {
 
             {/* Adicionar Novo Vendedor */}
             <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white">
+              <CardHeader className="bg-primary-green text-white"> {/* Primary Green */}
                 <CardTitle className="flex items-center">
                   <Plus className="w-6 h-6 mr-2" />
                   Adicionar Novo Membro
@@ -225,7 +225,7 @@ const Configuration = () => {
                 {!showAddForm ? (
                   <Button
                     onClick={() => setShowAddForm(true)}
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full bg-primary-green hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-green/70"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Adicionar Vendedor
@@ -233,54 +233,54 @@ const Configuration = () => {
                 ) : (
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-green-700 font-medium">Nome *</Label>
+                      <Label className="text-gray-700 font-medium">Nome *</Label> {/* Neutral label */}
                       <Input
                         value={newPerson.name}
                         onChange={(e) => setNewPerson({...newPerson, name: e.target.value})}
                         placeholder="Nome do vendedor"
-                        className="border-green-200 focus:border-green-500"
+                        className="border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                       />
                     </div>
                     
                     <div>
-                      <Label className="text-green-700 font-medium">URL da Foto</Label>
+                      <Label className="text-gray-700 font-medium">URL da Foto</Label> {/* Neutral label */}
                       <Input
                         value={newPerson.photo}
                         onChange={(e) => setNewPerson({...newPerson, photo: e.target.value})}
                         placeholder="https://exemplo.com/foto.jpg"
-                        className="border-green-200 focus:border-green-500"
+                        className="border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                       />
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <Label className="text-green-700 font-medium">Meta *</Label>
+                        <Label className="text-gray-700 font-medium">Meta *</Label> {/* Neutral label */}
                         <Input
                           type="number"
                           value={newPerson.goal || ""}
                           onChange={(e) => setNewPerson({...newPerson, goal: parseInt(e.target.value) || 0})}
                           placeholder="30000"
-                          className="border-green-200 focus:border-green-500"
+                          className="border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                         />
                       </div>
                       <div>
-                        <Label className="text-green-700 font-medium">Desafio</Label>
+                        <Label className="text-gray-700 font-medium">Desafio</Label> {/* Neutral label */}
                         <Input
                           type="number"
                           value={newPerson.challenge || ""}
                           onChange={(e) => setNewPerson({...newPerson, challenge: parseInt(e.target.value) || 0})}
                           placeholder="42000"
-                          className="border-green-200 focus:border-green-500"
+                          className="border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                         />
                       </div>
                       <div>
-                        <Label className="text-green-700 font-medium">Mega</Label>
+                        <Label className="text-gray-700 font-medium">Mega</Label> {/* Neutral label */}
                         <Input
                           type="number"
                           value={newPerson.mega || ""}
                           onChange={(e) => setNewPerson({...newPerson, mega: parseInt(e.target.value) || 0})}
                           placeholder="55000"
-                          className="border-green-200 focus:border-green-500"
+                          className="border-gray-300 focus:border-primary-green" /* Neutral border, Primary focus */
                         />
                       </div>
                     </div>
@@ -289,14 +289,14 @@ const Configuration = () => {
                       <Button
                         variant="outline"
                         onClick={() => setShowAddForm(false)}
-                        className="flex-1 border-green-300 text-green-700 hover:bg-green-50"
+                        className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100" // Neutral outline
                       >
                         Cancelar
                       </Button>
                       <Button
                         onClick={handleAddPerson}
                         disabled={!newPerson.name || !newPerson.goal}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        className="flex-1 bg-primary-green hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-green/70"
                       >
                         <Save className="w-4 h-4 mr-2" />
                         Adicionar

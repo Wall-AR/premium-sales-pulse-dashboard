@@ -8,15 +8,22 @@ import { DashboardFilters } from "./dashboard/DashboardFilters";
 import { Navigation } from "./Navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, Target, TrendingUp } from "lucide-react";
+import { BarChart3, Users, Target, TrendingUp, SlidersHorizontal } from "lucide-react"; // Added SlidersHorizontal
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getKPIs, getDailySales, getSalespeopleWithPerformance } from "@/lib/supabaseQueries"; // Updated import
-import type { KPI, DailySale, SalespersonPerformance } from "@/lib/supabaseQueries"; // Removed Salesperson, SellerProfile already imported
+import { getKPIs, getDailySales, getSalespeopleWithPerformance } from "@/lib/supabaseQueries";
+import type { KPI, DailySale, SalespersonPerformance } from "@/lib/supabaseQueries";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"; // Added Sheet components
 
 export const Dashboard = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'ranking' | 'charts' | 'analysis'>('overview');
-
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<{ month_year?: string }>({});
 
   const handleMonthYearChange = (newMonthYear?: string) => {
@@ -147,24 +154,52 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    <div className="min-h-screen bg-neutral-bg"> {/* Updated background */}
       <Navigation />
       
       {/* Main content container with adjusted top padding */}
-      <div className="container mx-auto px-6 pt-[96px] pb-8"> {/* Adjusted py-8 to pt-[96px] pb-8 */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Barra Lateral de Filtros */}
-          <div className="lg:col-span-1">
+      <div className="container mx-auto px-6 pt-[96px] pb-8">
+        {/* Updated to 12-column grid */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Sidebar for large screens (inline) */}
+          <div className="hidden lg:block col-span-12 lg:col-span-3">
             <DashboardFilters
               onMonthYearChange={handleMonthYearChange}
               currentMonthYear={activeFilters.month_year}
             />
           </div>
+
+          {/* Trigger button for mobile/tablet screens & Sheet */}
+          <div className="lg:hidden col-span-12 mb-4 flex justify-start">
+            <Sheet open={isMobileFiltersOpen} onOpenChange={setIsMobileFiltersOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="flex items-center">
+                  <SlidersHorizontal className="w-4 h-4 mr-2" />
+                  Filtros
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[340px] p-0">
+                <SheetHeader className="p-4 border-b"> {/* Custom header for sheet title */}
+                  <SheetTitle>Aplicar Filtros</SheetTitle>
+                </SheetHeader>
+                <div className="p-4"> {/* Padding for the filters component */}
+                  <DashboardFilters
+                    onMonthYearChange={(monthYear) => {
+                      handleMonthYearChange(monthYear);
+                      setIsMobileFiltersOpen(false); // Close drawer on filter change
+                    }}
+                    currentMonthYear={activeFilters.month_year}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
           
           {/* Card Principal Unificado */}
-          <div className="lg:col-span-4">
-            <Card className="bg-white shadow-xl border-green-100">
-              <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
+          {/* Main content: Full width on small/medium, 9 columns on large */}
+          <div className="col-span-12 lg:col-span-9">
+            <Card className="bg-white shadow-xl border-green-100"> {/* Ensure this card uses new theme if applicable, or is neutral */}
+              <CardHeader className="bg-primary-green text-white"> {/* Updated to primary-green */}
                 {/* Title: text-2xl font-bold (CardTitle by default is often text-2xl font-semibold) */}
                 <CardTitle className="flex items-center justify-between font-bold">
                   <div className="flex items-center">
@@ -179,17 +214,17 @@ export const Dashboard = () => {
               
               <CardContent className="p-0">
                 {/* Navegação por Abas - Sticky */}
-                <div className="sticky top-[80px] z-40 bg-green-50 border-b border-green-200 p-4">
+                <div className="sticky top-[80px] z-40 bg-white border-b border-gray-200 p-4"> {/* Updated background */}
                   <div className="flex flex-wrap gap-2 justify-center"> {/* Centering tabs */}
                     {navigationButtons.map((button) => (
                       <Button
                         key={button.id}
-                        variant="ghost" // Using ghost variant as base for custom styling
-                        size="sm" // Keep sm size, px-4 will adjust horizontal padding
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setActiveSection(button.id as any)}
-                        className={`rounded-full px-4 transition-colors duration-200 ${
+                        className={`rounded-full px-4 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-green/70 focus:ring-offset-white ${
                           activeSection === button.id
-                            ? 'bg-green-600 text-white font-semibold shadow-md'
+                            ? 'bg-primary-green text-white font-semibold shadow-md'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-sm hover:shadow-md'
                         }`}
                       >

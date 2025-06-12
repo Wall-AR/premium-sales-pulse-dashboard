@@ -20,7 +20,7 @@ export const Navigation = () => {
   ];
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 py-4 h-[80px] bg-gradient-to-r from-green-600 to-green-500 shadow-md">
+    <div className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 py-4 h-[80px] bg-primary-green shadow-md"> {/* Updated background */}
       {/* Left Section: Logo and App Name */}
       <div className="flex items-center space-x-3">
         <img
@@ -43,14 +43,14 @@ export const Navigation = () => {
                     variant="ghost" // Using ghost variant for icon buttons
                     size="icon" // Using icon size
                     onClick={() => navigate(item.path)}
-                    className={`p-2 rounded-full transition-colors duration-200 ease-in-out
+                    className={`p-2 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-green focus:ring-white
                       ${isActive
-                        ? "bg-green-700/70 text-white" // Active state with slightly darker background
-                        : "text-white hover:bg-green-700/50"
+                        ? "bg-black/20 text-white"
+                        : "text-white hover:bg-black/10"
                       }
                     `}
                   >
-                    <item.icon className="w-5 h-5" /> {/* Icon size */}
+                    <item.icon className="w-5 h-5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-gray-800 text-white border-gray-700">
@@ -67,7 +67,7 @@ export const Navigation = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-green-700/50 p-2 rounded-full">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-black/10 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-green focus:ring-white">
                 <Bell className="w-6 h-6" />
               </Button>
             </TooltipTrigger>
@@ -80,7 +80,7 @@ export const Navigation = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-green-700/50 p-2 rounded-full">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-black/10 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-green focus:ring-white">
                 <UserCircle className="w-6 h-6" />
               </Button>
             </TooltipTrigger>
