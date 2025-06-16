@@ -1,6 +1,6 @@
-import React, { useState } from 'react'; // Added useState
-import { useQuery, useQueryClient } from '@tanstack/react-query'; // Added useQueryClient
-import { getAllBillingStatements, BillingStatement, addBillingStatement, NewBillingStatementData } from '@/lib/supabaseQueries'; // Added addBillingStatement, NewBillingStatementData
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getAllBillingEntries, BillingEntry, addBillingEntry, NewBillingEntryData } from '@/lib/supabaseQueries'; // Updated imports
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -11,17 +11,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Edit3, Trash2, Loader2, PlusCircle, ClipboardList, ListChecks } from 'lucide-react'; // Added ClipboardList, ListChecks
+import { Edit3, Trash2, Loader2, PlusCircle, ClipboardList, ListChecks } from 'lucide-react';
 
 const FaturamentoPage = () => {
-  const { data: billingStatements, isLoading, isError, error } = useQuery<BillingStatement[], Error>({
-    queryKey: ['allBillingStatements'],
-    queryFn: getAllBillingStatements,
+  // Renamed billingStatements to billingEntries for clarity
+  const { data: billingEntries, isLoading, isError, error } = useQuery<BillingEntry[], Error>({
+    queryKey: ['allBillingEntries'], // Updated queryKey
+    queryFn: getAllBillingEntries, // Updated function call
   });
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newStatement, setNewStatement] = useState<Partial<Omit<NewBillingStatementData, 'created_by'>>>({
-    month_year: '', // YYYY-MM
+  // Renamed newStatement to newEntry and updated structure
+  const [newEntry, setNewEntry] = useState({
+    entry_date: new Date().toISOString().split('T')[0], // Default to today YYYY-MM-DD
     faturamento_released: 0,
     faturamento_atr: 0,
     notes: '',
@@ -30,49 +32,51 @@ const FaturamentoPage = () => {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
-  const handleAddStatement = async () => {
+  // Renamed handleAddStatement to handleAddEntry
+  const handleAddEntry = async () => {
     if (!currentUser) {
       toast.error("Autenticação necessária.");
       return;
     }
-    if (!newStatement.month_year) {
-      toast.error("Mês/Ano é obrigatório.");
+    if (!newEntry.entry_date) {
+      toast.error("Data de Lançamento é obrigatória.");
       return;
     }
-    // Basic validation for month_year format
-    if (!newStatement.month_year.match(/^\d{4}-\d{2}$/)) {
-        toast.error("Formato de Mês/Ano inválido. Use YYYY-MM.");
-        return;
-    }
+    // Basic validation for entry_date format (already handled by input type="date")
     // Add more validation as needed for amounts (e.g., non-negative)
-    if ((newStatement.faturamento_released ?? 0) < 0 || (newStatement.faturamento_atr ?? 0) < 0) {
+    if ((newEntry.faturamento_released ?? 0) < 0 || (newEntry.faturamento_atr ?? 0) < 0) {
         toast.error("Valores de faturamento não podem ser negativos.");
         return;
     }
 
-
     setIsSaving(true);
-    const payload: NewBillingStatementData = {
-      month_year: newStatement.month_year,
-      faturamento_released: newStatement.faturamento_released ?? 0,
-      faturamento_atr: newStatement.faturamento_atr ?? 0,
-      notes: newStatement.notes || undefined,
+    // Construct payload for NewBillingEntryData
+    const payload: NewBillingEntryData = {
+      entry_date: newEntry.entry_date,
+      faturamento_released: newEntry.faturamento_released ?? 0,
+      faturamento_atr: newEntry.faturamento_atr ?? 0,
+      notes: newEntry.notes || undefined,
       created_by: currentUser.id,
     };
 
-    const { error: addError } = await addBillingStatement(payload); // Renamed error to addError
+    const { error: addError } = await addBillingEntry(payload); // Use addBillingEntry
 
     if (addError) {
       toast.error(`Erro ao adicionar lançamento: ${addError.message}`);
     } else {
       toast.success("Lançamento de faturamento adicionado com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ['allBillingStatements'] });
+      queryClient.invalidateQueries({ queryKey: ['allBillingEntries'] }); // Updated queryKey
       setIsAddDialogOpen(false);
-      setNewStatement({ month_year: '', faturamento_released: 0, faturamento_atr: 0, notes: '' });
+      // Reset form
+      setNewEntry({
+        entry_date: new Date().toISOString().split('T')[0],
+        faturamento_released: 0,
+        faturamento_atr: 0,
+        notes: ''
+      });
     }
     setIsSaving(false);
   };
-
 
   if (isLoading) {
     return (
@@ -104,11 +108,11 @@ const FaturamentoPage = () => {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-3">
             <ClipboardList className="w-8 h-8 text-primary-green" />
-            <h1 className="text-3xl font-bold text-gray-800">Faturamento Mensal</h1> {/* Adjusted size */}
+            <h1 className="text-3xl font-bold text-gray-800">Faturamento Mensal</h1>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary-green hover:bg-primary-green/90 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-green/70"> {/* Added focus ring */}
+              <Button className="bg-primary-green hover:bg-primary-green/90 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-green/70">
                 <PlusCircle className="w-4 h-4 mr-2" />
                 Adicionar Lançamento
               </Button>
@@ -117,17 +121,18 @@ const FaturamentoPage = () => {
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Lançamento de Faturamento</DialogTitle>
                 <DialogDescription>
-                  Insira os dados para o faturamento do mês. Clique em salvar quando terminar.
+                  Insira os dados para o novo lançamento. Clique em salvar quando terminar.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+                {/* entry_date input */}
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="month_year" className="text-right">Mês/Ano</Label>
+                  <Label htmlFor="entry_date" className="text-right">Data Lançamento</Label>
                   <Input
-                    id="month_year"
-                    type="month"
-                    value={newStatement.month_year}
-                    onChange={(e) => setNewStatement({ ...newStatement, month_year: e.target.value })}
+                    id="entry_date"
+                    type="date"
+                    value={newEntry.entry_date}
+                    onChange={(e) => setNewEntry({ ...newEntry, entry_date: e.target.value })}
                     className="col-span-3"
                   />
                 </div>
@@ -136,8 +141,8 @@ const FaturamentoPage = () => {
                   <Input
                     id="faturamento_released"
                     type="number"
-                    value={newStatement.faturamento_released || ''}
-                    onChange={(e) => setNewStatement({ ...newStatement, faturamento_released: parseFloat(e.target.value) || 0 })}
+                    value={newEntry.faturamento_released || ''}
+                    onChange={(e) => setNewEntry({ ...newEntry, faturamento_released: parseFloat(e.target.value) || 0 })}
                     className="col-span-3"
                   />
                 </div>
@@ -146,8 +151,8 @@ const FaturamentoPage = () => {
                   <Input
                     id="faturamento_atr"
                     type="number"
-                    value={newStatement.faturamento_atr || ''}
-                    onChange={(e) => setNewStatement({ ...newStatement, faturamento_atr: parseFloat(e.target.value) || 0 })}
+                    value={newEntry.faturamento_atr || ''}
+                    onChange={(e) => setNewEntry({ ...newEntry, faturamento_atr: parseFloat(e.target.value) || 0 })}
                     className="col-span-3"
                   />
                 </div>
@@ -155,8 +160,8 @@ const FaturamentoPage = () => {
                   <Label htmlFor="notes" className="text-right">Notas</Label>
                   <Textarea
                     id="notes"
-                    value={newStatement.notes || ''} // Ensure textarea value is not null/undefined
-                    onChange={(e) => setNewStatement({ ...newStatement, notes: e.target.value })}
+                    value={newEntry.notes || ''}
+                    onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
                     className="col-span-3"
                     placeholder="Notas adicionais..."
                   />
@@ -166,7 +171,7 @@ const FaturamentoPage = () => {
                 <DialogClose asChild>
                   <Button variant="outline">Cancelar</Button>
                 </DialogClose>
-                <Button type="button" onClick={handleAddStatement} disabled={isSaving} className="bg-primary-green hover:bg-primary-green/90 text-white">
+                <Button type="button" onClick={handleAddEntry} disabled={isSaving} className="bg-primary-green hover:bg-primary-green/90 text-white">
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Salvar Lançamento
                 </Button>
@@ -181,29 +186,30 @@ const FaturamentoPage = () => {
               <ListChecks className="w-5 h-5 mr-2 text-primary-green" />
               Registros de Faturamento
             </CardTitle>
-            <CardDescription>Lista de todos os lançamentos de faturamento mensais.</CardDescription>
+            <CardDescription>Lista de todos os lançamentos de faturamento.</CardDescription>
           </CardHeader>
           <CardContent>
-            {billingStatements && billingStatements.length > 0 ? (
+            {billingEntries && billingEntries.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Mês/Ano</TableHead>
+                    <TableHead>Data Lançamento</TableHead>
+                    <TableHead>Mês/Ano Referência</TableHead>
                     <TableHead className="text-right">Faturamento Liberado (R$)</TableHead>
                     <TableHead className="text-right">Faturamento ATR (R$)</TableHead>
-                    <TableHead className="hidden md:table-cell">Notas</TableHead> {/* Hide notes on small screens */}
+                    <TableHead className="hidden md:table-cell">Notas</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {billingStatements.map((stmt) => (
-                    <TableRow key={stmt.id}>
-                      <TableCell className="font-medium">{new Date(stmt.month_year + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric'})}</TableCell>
-                      <TableCell className="text-right">{stmt.faturamento_released.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
-                      <TableCell className="text-right">{stmt.faturamento_atr.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
-                      <TableCell className="hidden md:table-cell max-w-xs truncate" title={stmt.notes || undefined}>{stmt.notes || '-'}</TableCell>
+                  {billingEntries.map((entry) => ( // Renamed stmt to entry
+                    <TableRow key={entry.id}>
+                      <TableCell className="font-medium">{new Date(entry.entry_date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}</TableCell>
+                      <TableCell>{entry.month_year}</TableCell>
+                      <TableCell className="text-right">{entry.faturamento_released.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
+                      <TableCell className="text-right">{entry.faturamento_atr.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
+                      <TableCell className="hidden md:table-cell max-w-xs truncate" title={entry.notes || undefined}>{entry.notes || '-'}</TableCell>
                       <TableCell className="text-right">
-                        {/* TODO: Implement Edit/Delete functionality and wire up buttons */}
                         <Button variant="ghost" size="icon" className="mr-2 hover:text-primary-green">
                           <Edit3 className="w-4 h-4" />
                         </Button>

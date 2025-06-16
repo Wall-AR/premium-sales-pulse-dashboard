@@ -1,11 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getSalespeopleWithPerformance, SalespersonPerformance, getDailySales, DailySale } from '@/lib/supabaseQueries'; // Added getDailySales, DailySale
+import { getSalespeopleWithPerformance, SalespersonPerformance, getDailySales, DailySale } from '@/lib/supabaseQueries';
 import { Navigation } from '@/components/Navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Building, Users, BarChartBig, Loader2, Target, Award, Star, LineChart as LineChartIcon } from 'lucide-react'; // Added LineChartIcon
-import { SalesChart } from '@/components/dashboard/SalesChart'; // Added SalesChart import
+import { Input } from "@/components/ui/input"; // Added Input import
+import { Button } from "@/components/ui/button"; // Added Button import
+import { Building, Users, BarChartBig, Loader2, Target, Award, Star, LineChart as LineChartIcon } from 'lucide-react';
+import { SalesChart } from '@/components/dashboard/SalesChart';
 
 // Internal GoalBlock Component
 interface GoalBlockProps {

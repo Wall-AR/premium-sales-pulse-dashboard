@@ -26,19 +26,22 @@ const KPICardSkeleton: React.FC<KPICardSkeletonProps> = ({ count = 6 }) => { // 
 };
 
 interface KPICardsProps {
-  kpiData: KPI | null | undefined; // Renamed from data
-  billingData?: BillingStatement | null;
+  kpiData: KPI | null | undefined;
+  billingEntries?: BillingEntry[] | null; // Updated prop name and type
   activeMonthYear?: string;
 }
 
-export const KPICards = ({ kpiData, billingData, activeMonthYear }: KPICardsProps) => {
-  // Handle loading state for kpiData. billingData is optional and might not be present if no month is selected.
+export const KPICards = ({ kpiData, billingEntries, activeMonthYear }: KPICardsProps) => {
   if (!kpiData) {
-    return <KPICardSkeleton count={6} />; // Show all 6 skeletons if kpiData is loading
+    return <KPICardSkeleton count={6} />;
   }
 
+  // Sum billing entries if available
+  const monthlyFaturamentoReleased = billingEntries?.reduce((sum, entry) => sum + entry.faturamento_released, 0) ?? 0;
+  const monthlyFaturamentoAtr = billingEntries?.reduce((sum, entry) => sum + entry.faturamento_atr, 0) ?? 0;
+
   const totalSold = kpiData.total_sold ?? 0;
-  const totalGoal = kpiData.total_goal ?? 0; // Keep ?? 0 for calculations, subtitle handles "not defined"
+  const totalGoal = kpiData.total_goal ?? 0;
   const totalClients = kpiData.total_clients ?? 0;
   const newClients = kpiData.new_clients ?? 0;
   const globalAvgTicket = kpiData.global_avg_ticket ?? 0;
@@ -76,17 +79,19 @@ export const KPICards = ({ kpiData, billingData, activeMonthYear }: KPICardsProp
   const billingCardsDefinition = [
     {
       title: "Faturamento no Mês",
-      value: `R$ ${(billingData?.faturamento_released ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
-      icon: Banknote, // Using Banknote for faturamento
+      value: `R$ ${monthlyFaturamentoReleased.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+      icon: Banknote,
       subtitle: activeMonthYear
                   ? `Referente a ${new Date(activeMonthYear + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`
                   : "Nenhum mês selecionado",
+      valueColorClass: "text-primary-green", // Added color class
     },
     {
       title: "Faturamento ATR",
-      value: `R$ ${(billingData?.faturamento_atr ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+      value: `R$ ${monthlyFaturamentoAtr.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
       icon: AlertCircle,
       subtitle: "Pedidos liberados em atraso",
+      valueColorClass: "text-red-600", // Added color class for ATR
     }
   ];
 
@@ -100,8 +105,9 @@ export const KPICards = ({ kpiData, billingData, activeMonthYear }: KPICardsProp
         <Card key={index} className="bg-white shadow-sm rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105">
           <CardContent className="p-4 flex flex-col items-start gap-1">
             <kpi.icon className="w-5 h-5 text-primary-green mb-1" />
-            <p className="text-sm text-gray-500">{kpi.title}</p> {/* Label style */}
-            <p className="text-xl font-semibold text-primary-green">{kpi.value}</p> {/* Updated metric color */}
+            <p className="text-sm text-gray-500">{kpi.title}</p>
+            {/* Apply conditional color to value if valueColorClass is present */}
+            <p className={`text-xl font-semibold ${kpi.valueColorClass || 'text-primary-green'}`}>{kpi.value}</p>
             <p className="text-xs text-gray-500">{kpi.subtitle}</p>
           </CardContent>
         </Card>
