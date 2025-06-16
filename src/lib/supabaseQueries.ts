@@ -445,19 +445,24 @@ export async function getDailySales(month_year_filter?: string): Promise<{ curre
   const emptyReturn = { currentMonthSales: [], previousMonthSales: [] };
 
   if (!targetMonthYear) {
-    const { data: kpiData, error: kpiError } = await supabase
+    console.log('[getDailySales] No month_year_filter provided, attempting to fetch latest from kpis.');
+    const { data: kpiMonthDataArray, error: kpiError } = await supabase
       .from('kpis')
       .select('month_year')
       .order('month_year', { ascending: false })
-      .limit(1)
-      .single(); // Use single to get one object or null
+      .limit(1); // Fetch the most recent one as an array
 
-    if (kpiError || !kpiData?.month_year) {
-      console.error('Failed to fetch latest month_year from kpis for getDailySales. Returning empty arrays.', kpiError);
+    if (kpiError) {
+      console.error('[getDailySales] Error fetching latest month_year from kpis:', kpiError);
       return emptyReturn;
     }
-    targetMonthYear = kpiData.month_year;
-    console.log("[getDailySales] Using latest month_year from kpis:", targetMonthYear);
+
+    if (!kpiMonthDataArray || kpiMonthDataArray.length === 0 || !kpiMonthDataArray[0]?.month_year) {
+      console.warn('[getDailySales] Failed to fetch latest month_year from kpis (no data or month_year field missing). Returning empty sales arrays.');
+      return emptyReturn;
+    }
+    targetMonthYear = kpiMonthDataArray[0].month_year;
+    console.log("[getDailySales] Using month_year from kpis for targetMonthYear:", targetMonthYear);
   }
 
   if (!targetMonthYear) {
@@ -740,95 +745,97 @@ export async function getSellerTargetsForMonth(
   return data || [];
 }
 
-// --- Monthly Billing Reports ---
+// --- Billing Reports --- (Renamed section)
 
-export interface BillingStatement {
+export interface BillingEntry { // Renamed from BillingStatement
   id: string; // UUID
-  month_year: string; // "YYYY-MM"
+  entry_date: string; // YYYY-MM-DD - New
+  month_year: string; // "YYYY-MM" - Auto-populated by DB trigger from entry_date
   faturamento_released: number;
   faturamento_atr: number;
   notes?: string | null;
-  created_by?: string | null; // UUID from auth.users
-  updated_by?: string | null; // UUID from auth.users
-  created_at: string; // ISO timestamp
-  updated_at: string; // ISO timestamp
+  created_by?: string | null;
+  updated_by?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-// Type for inserting new billing statements
-export type NewBillingStatementData = Omit<BillingStatement, 'id' | 'created_at' | 'updated_at' | 'updated_by'> & {
-  created_by: string; // Ensure created_by is required on creation
+// Update utility types
+export type NewBillingEntryData = Omit<BillingEntry, 'id' | 'created_at' | 'updated_at' | 'updated_by' | 'month_year'> & {
+  created_by: string; // month_year is removed as DB will populate it
 };
 
-// Type for updating, requiring updated_by
-export type UpdateBillingStatementData = Partial<Omit<BillingStatement, 'id' | 'created_at' | 'updated_at' | 'created_by'>> & {
-  updated_by: string; // Ensure updated_by is required on update
+export type UpdateBillingEntryData = Partial<Omit<BillingEntry, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'month_year'>> & {
+  // seller_id was a typo in prompt, removed. month_year is not directly updatable.
+  updated_by: string;
 };
 
-export async function addBillingStatement(
-  statementData: NewBillingStatementData
-): Promise<{ data: BillingStatement | null; error: any }> {
+export async function addBillingEntry(
+  entryData: NewBillingEntryData
+): Promise<{ data: BillingEntry | null; error: any }> {
+  // month_year will be auto-populated by the database trigger from entry_date
   const { data, error } = await supabase
-    .from('monthly_billing_reports')
-    .insert(statementData)
+    .from('billing_reports') // Renamed table
+    .insert(entryData)
     .select()
     .single();
-  if (error) console.error('[addBillingStatement] Error:', error);
+  if (error) console.error('[addBillingEntry] Error:', error);
   return { data, error };
 }
 
-export async function updateBillingStatement(
+export async function updateBillingEntry(
   id: string,
-  statementData: UpdateBillingStatementData
-): Promise<{ data: BillingStatement | null; error: any }> {
+  entryData: UpdateBillingEntryData
+): Promise<{ data: BillingEntry | null; error: any }> {
   const { data, error } = await supabase
-    .from('monthly_billing_reports')
-    .update(statementData)
+    .from('billing_reports') // Renamed table
+    .update(entryData)
     .eq('id', id)
     .select()
     .single();
-  if (error) console.error(`[updateBillingStatement] Error updating ${id}:`, error);
+  if (error) console.error(`[updateBillingEntry] Error updating ${id}:`, error);
   return { data, error };
 }
 
-export async function deleteBillingStatement(
+export async function deleteBillingEntry( // Renamed function
   id: string
 ): Promise<{ error: any }> {
   const { error } = await supabase
-    .from('monthly_billing_reports')
+    .from('billing_reports') // Renamed table
     .delete()
     .eq('id', id);
-  if (error) console.error(`[deleteBillingStatement] Error deleting ${id}:`, error);
+  if (error) console.error(`[deleteBillingEntry] Error deleting ${id}:`, error);
   return { error };
 }
 
-export async function getBillingStatementForMonth(
+export async function getBillingEntriesForMonth( // Renamed function
   month_year: string // "YYYY-MM"
-): Promise<BillingStatement | null> {
+): Promise<BillingEntry[]> { // Returns array
   if (!month_year || !month_year.match(/^\d{4}-\d{2}$/)) {
-      console.warn('[getBillingStatementForMonth] Invalid month_year format provided:', month_year);
-      return null;
+      console.warn('[getBillingEntriesForMonth] Invalid month_year format provided:', month_year);
+      return [];
   }
   const { data, error } = await supabase
-    .from('monthly_billing_reports')
+    .from('billing_reports') // Renamed table
     .select('*')
     .eq('month_year', month_year)
-    .maybeSingle(); // Use maybeSingle as a month might not have a report yet
+    .order('entry_date', { ascending: true }); // Order by entry_date
 
   if (error) {
-    console.error(`[getBillingStatementForMonth] Error fetching report for ${month_year}:`, error);
-    return null;
+    console.error(`[getBillingEntriesForMonth] Error fetching entries for ${month_year}:`, error);
+    return [];
   }
-  return data;
+  return data || [];
 }
 
-export async function getAllBillingStatements(): Promise<BillingStatement[]> {
+export async function getAllBillingEntries(): Promise<BillingEntry[]> { // Renamed function
   const { data, error } = await supabase
-    .from('monthly_billing_reports')
+    .from('billing_reports') // Renamed table
     .select('*')
-    .order('month_year', { ascending: false });
+    .order('entry_date', { ascending: false }); // Order by entry_date
 
   if (error) {
-    console.error('[getAllBillingStatements] Error fetching reports:', error);
+    console.error('[getAllBillingEntries] Error fetching entries:', error);
     return [];
   }
   return data || [];

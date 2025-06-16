@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Users, Target, TrendingUp, SlidersHorizontal } from "lucide-react"; // Added SlidersHorizontal
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getKPIs, getDailySales, getSalespeopleWithPerformance, getBillingStatementForMonth } from "@/lib/supabaseQueries"; // Import added
-import type { KPI, DailySale, SalespersonPerformance, BillingStatement } from "@/lib/supabaseQueries"; // Import added
+import { getKPIs, getDailySales, getSalespeopleWithPerformance, getBillingEntriesForMonth } from "@/lib/supabaseQueries"; // Renamed getBillingStatementForMonth
+import type { KPI, DailySale, SalespersonPerformance, BillingEntry } from "@/lib/supabaseQueries"; // Renamed BillingStatement
 import {
   Sheet,
   SheetContent,
@@ -41,18 +41,18 @@ export const Dashboard = () => {
   );
 
   const {
-    data: billingStatementData,
-    isLoading: isLoadingBillingStatement,
-    // error: errorBillingStatement // Add if specific error handling needed
-  } = useQuery<BillingStatement | null, Error>({
-    queryKey: ['billingStatementForMonth', activeFilters.month_year],
+    data: billingEntriesData, // Renamed
+    isLoading: isLoadingBillingEntries, // Renamed
+    // error: errorBillingEntries
+  } = useQuery<BillingEntry[], Error>({ // Expects BillingEntry[]
+    queryKey: ['billingEntriesForMonth', activeFilters.month_year], // New queryKey
     queryFn: () => {
       if (!activeFilters.month_year) {
-        console.log('[Dashboard.tsx] No month_year filter set for billing statement, returning null.');
-        return null;
+        console.log('[Dashboard.tsx] No month_year filter set for billing entries, returning empty array.');
+        return [];
       }
-      console.log('[Dashboard.tsx] Fetching billing statement for month:', activeFilters.month_year);
-      return getBillingStatementForMonth(activeFilters.month_year);
+      console.log('[Dashboard.tsx] Fetching billing entries for month:', activeFilters.month_year);
+      return getBillingEntriesForMonth(activeFilters.month_year); // Fetches all entries for the month
     },
     enabled: !!activeFilters.month_year,
   });
@@ -94,9 +94,9 @@ export const Dashboard = () => {
     { id: 'analysis', label: 'Análise', icon: Target }
   ];
 
-  if (kpisLoading || salespeopleLoading || dailySalesLoading || isLoadingBillingStatement) { // Added isLoadingBillingStatement
+  if (kpisLoading || salespeopleLoading || dailySalesLoading || isLoadingBillingEntries) { // Updated loading state name
     return (
-      <div className="min-h-screen bg-neutral-bg flex flex-col"> {/* Ensure neutral-bg is used */}
+      <div className="min-h-screen bg-neutral-bg flex flex-col">
         <Navigation />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
@@ -148,8 +148,7 @@ export const Dashboard = () => {
       case 'overview':
         return (
           <div className="space-y-6">
-            {/* Pass billingData and activeMonthYear to KPICards */}
-            <KPICards kpiData={kpisData} billingData={billingStatementData} activeMonthYear={activeFilters.month_year} />
+            <KPICards kpiData={kpisData} billingEntries={billingEntriesData} activeMonthYear={activeFilters.month_year} /> {/* Updated prop name */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <SalespersonRanking salespeople={salespeoplePerformanceData} />
