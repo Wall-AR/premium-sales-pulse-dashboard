@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Navigation } from "@/components/Navigation";
 // import { salesData } from "@/data/salesData"; // Removed as it's no longer used
-import { ArrowLeft, Plus, Trash2, Save, Users, Target } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Users, Target, Loader2 } from "lucide-react"; // Added Loader2
 import { useToast } from "@/hooks/use-toast";
 
 interface SalespersonConfig extends SellerProfile { // Extend SellerProfile
@@ -154,7 +154,12 @@ const Configuration = () => {
 
     setIsSavingTargets(prev => ({ ...prev, [person.id]: true }));
 
-    const targetPayload = {
+    // Ensure correct type for NewSellerTargetData which does not include id, created_at, updated_at
+    const targetDataForSupabase: Omit<NewSellerTargetData, 'created_by'> = { // created_by will be added if it's a new target by RLS or function logic
+                                                                            // For this function, seller_id IS the FK to salespeople.
+                                                                            // The RLS on seller_targets is `auth.uid() = seller_id`
+                                                                            // This means that targetPayload.seller_id MUST be an auth.uid() for RLS to pass.
+                                                                            // This is a mismatch if person.id is from salespeople table and not an auth.uid().
       seller_id: person.id,
       month: `${selectedMonth}-01`,
       goal_value: person.goal ?? 0,
@@ -162,58 +167,60 @@ const Configuration = () => {
       mega_goal_value: person.mega ?? 0,
     };
 
-    let result;
-    if (person.seller_target_id) {
-      // Update: RLS for seller_targets: USING (auth.uid() = seller_id) WITH CHECK (auth.uid() = seller_id)
-      // This policy implies that the 'seller_id' column in 'seller_targets' must be the auth.uid() of the current user.
-      // This is problematic if 'seller_id' is a FK to 'salespeople.id' and an admin is making changes.
-      // For this to work as an admin, RLS would need to allow based on an admin role, or this should use a service client.
-      // Or, if users manage their own targets, person.id (which is salespeople.id) must match currentUser.id.
-      // The SQL schema uses seller_id as FK to salespeople.id.
-      // The provided RLS `auth.uid() = seller_id` will likely fail unless `salespeople.id` IS an `auth.uid`.
-      // This needs careful review of RLS vs. table structure.
-      // For now, we pass what's needed for UpdateSellerTargetData if RLS were to allow it.
-      // UpdateSellerTargetData expects updated_by. The table has updated_by, but RLS for update uses seller_id.
-      // Let's assume for now that the RLS is what user specified and we are trying to work with it.
-      // The SQL RLS for UPDATE is `USING (auth.uid() = seller_id) WITH CHECK (auth.uid() = seller_id)`
-      // The `updateSellerTarget` function itself does not require `updated_by` in its payload params.
-      // The SQL table has `updated_by` but its trigger handles `updated_at`, not `updated_by`.
-      // So, for `updateSellerTarget`, we just pass the goal fields.
-      result = await updateSellerTarget(person.seller_target_id, {
-        goal_value: targetPayload.goal_value,
-        challenge_value: targetPayload.challenge_value,
-        mega_goal_value: targetPayload.mega_goal_value,
-        // updated_by: currentUser.id // This would be needed if UpdateSellerTargetData required it and RLS used it.
-                                    // But our UpdateSellerTargetData does not include it based on previous step.
-                                    // And RLS is checking auth.uid() against seller_id.
-      });
-    } else {
-      // Add: RLS for seller_targets: WITH CHECK (auth.uid() = seller_id)
-      // This means targetPayload.seller_id (which is salespeople.id) MUST BE currentUser.id for the RLS to pass.
-      // This is also problematic for an admin setting targets for others.
-      // NewSellerTargetData does not require created_by in its definition from previous step.
-      // The SQL table has created_by, but the RLS is on seller_id.
-      // If NewSellerTargetData needed created_by, it would be:
-      // const newTargetPayloadWithCreator = { ...targetPayload, created_by: currentUser.id };
-      // result = await addSellerTarget(newTargetPayloadWithCreator);
-      result = await addSellerTarget(targetPayload); // Assuming RLS works with seller_id matching auth.uid()
+    // For UpdateSellerTargetData, we only send fields that can be updated.
+    // seller_id and month should not be part of the update payload typically.
+    const updatePayload: UpdateSellerTargetData = {
+        goal_value: person.goal ?? 0,
+        challenge_value: person.challenge ?? 0,
+        mega_goal_value: person.mega ?? 0,
+        // updated_by: currentUser.id, // This is part of UpdateSellerTargetData type, but handled by RLS/DB in some setups.
+                                     // Our UpdateSellerTargetData in queries.ts does not require it.
+                                     // The RLS for seller_targets update is `USING (auth.uid() = seller_id) WITH CHECK (auth.uid() = seller_id)`
+                                     // The SQL table itself does not have an updated_by field as per the schema provided.
+                                     // Let's assume updated_by is not needed in payload based on current UpdateSellerTargetData type.
+    };
+
+
+    let result = null;
+    let operationType = '';
+
+    try {
+      if (person.seller_target_id) {
+        operationType = 'update';
+        console.log(`[ConfigPage] Attempting to UPDATE target ID: ${person.seller_target_id} for seller ${person.id} (${person.name}) for month ${targetDataForSupabase.month} with payload:`, JSON.stringify(updatePayload, null, 2));
+        console.warn(`[ConfigPage] RLS for UPDATE on 'seller_targets' is 'USING (auth.uid() = seller_id)'. This will fail if logged-in user (auth.uid(): ${currentUser?.id}) is not the seller_id ('${targetDataForSupabase.seller_id}') being updated, or if '${targetDataForSupabase.seller_id}' is not an auth.uid(). Current schema links seller_id to salespeople.id.`);
+        result = await updateSellerTarget(person.seller_target_id, updatePayload);
+      } else {
+        operationType = 'add';
+        // NewSellerTargetData requires seller_id, month, goal_value, challenge_value, mega_goal_value.
+        // It does not require created_by as per its definition in supabaseQueries.ts, this is a mismatch with the SQL table.
+        // The SQL table 'seller_targets' does NOT have 'created_by'. The RLS for INSERT is `WITH CHECK (auth.uid() = seller_id)`.
+        // This means targetDataForSupabase.seller_id (which is salespeople.id) MUST BE currentUser.id for the RLS to pass.
+        console.log(`[ConfigPage] Attempting to ADD target for seller ${person.id} (${person.name}) for month ${targetDataForSupabase.month} with payload:`, JSON.stringify(targetDataForSupabase, null, 2));
+        console.warn(`[ConfigPage] RLS for INSERT on 'seller_targets' is 'WITH CHECK (auth.uid() = seller_id)'. This means targetPayload.seller_id ('${targetDataForSupabase.seller_id}') must be the logged-in user's ID ('${currentUser?.id}'). This will likely fail if an admin is setting targets for others and seller_id refers to salespeople.id.`);
+        result = await addSellerTarget(targetDataForSupabase as NewSellerTargetData); // Cast to NewSellerTargetData as per function signature
+      }
+
+      if (result && !result.error && result.data) {
+        toast({ title: "Sucesso!", description: `Metas para ${person.name} salvas para ${selectedMonth}.` });
+        console.log(`[ConfigPage] ${operationType === 'update' ? 'Updated' : 'Added'} target successfully for seller ${person.id}:`, result.data);
+
+        const updatedTarget = await getSellerTargetForSellerAndMonth(person.id, `${selectedMonth}-01`);
+        setSellerTargetsMap(prevMap => ({ ...prevMap, [person.id]: updatedTarget }));
+        // This will trigger the useEffect that rebuilds the 'salespeople' array with new target id.
+
+        // Optionally, invalidate broader queries if other parts of app use this data directly for the month
+        queryClient.invalidateQueries({ queryKey: ['sellerTargetsForMonth', `${selectedMonth}-01`] });
+      } else {
+        console.error(`[ConfigPage] Error during ${operationType} target for seller ${person.id}:`, result?.error);
+        toast({ title: "Erro ao Salvar", description: result?.error?.message || `Não foi possível ${operationType === 'update' ? 'atualizar' : 'adicionar'} as metas. Verifique o console para detalhes.`, variant: "destructive" });
+      }
+    } catch (e: any) {
+      console.error(`[ConfigPage] CRITICAL ERROR during ${operationType} target for seller ${person.id}:`, e);
+      toast({ title: "Erro Crítico", description: `Ocorreu um erro inesperado ao salvar as metas. Verifique o console. ${e.message}`, variant: "destructive" });
+    } finally {
+      setIsSavingTargets(prev => ({ ...prev, [person.id]: false }));
     }
-
-    if (result && !result.error && result.data) { // Check result.data for add/update
-      toast({ title: "Sucesso!", description: `Metas para ${person.name} salvas para ${selectedMonth}.` });
-
-      // Manually refetch targets for the updated person to refresh UI immediately
-      // and get the new seller_target_id if it was an add operation.
-      const updatedTarget = await getSellerTargetForSellerAndMonth(person.id, `${selectedMonth}-01`);
-      setSellerTargetsMap(prevMap => ({ ...prevMap, [person.id]: updatedTarget }));
-      // The useEffect that combines fetchedSalespeople and sellerTargetsMap will then update the 'salespeople' state
-      // which will give the person object the new seller_target_id for future updates.
-
-      queryClient.invalidateQueries({ queryKey: ['sellerTargetsForMonth', `${selectedMonth}-01`] }); // If we had a query like this elsewhere
-    } else {
-      toast({ title: "Erro ao Salvar", description: result?.error?.message || "Não foi possível salvar as metas.", variant: "destructive" });
-    }
-    setIsSavingTargets(prev => ({ ...prev, [person.id]: false }));
   };
 
   const totalGoals = salespeople.reduce((sum, person) => sum + (person.goal || 0), 0);
