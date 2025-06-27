@@ -1,6 +1,45 @@
 import { supabase } from '@/integrations/supabase/client';
 import { addHistoryLogEntry, NewHistoryLogEntryData } from './historyLog';
 
+// --- User and Role Management ---
+
+export type UserRoleEnum = 'adm' | 'sales' | 'finance'; // Matches the ENUM in SQL
+
+export interface UserRole {
+  user_id: string; // UUID from auth.users
+  role: UserRoleEnum;
+  created_at: string; // ISO timestamp
+  updated_at: string; // ISO timestamp
+}
+
+export async function getUserRole(
+  userId: string
+): Promise<UserRole | null> {
+  if (!userId) {
+    console.warn('[getUserRole] userId is required.');
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') {
+       console.error(`[getUserRole] Error fetching role for user ${userId}:`, error);
+    } else {
+       console.log(`[getUserRole] No role entry found for user ${userId}. User may not have a role assigned yet.`);
+    }
+    return null;
+  }
+  return data as UserRole;
+}
+
+
+// --- General App Data Interfaces & Queries ---
+
 interface KPI {
   total_sold: number;
   total_goal: number;
