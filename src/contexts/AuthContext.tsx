@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { User, SignInWithPasswordCredentials, SignUpWithPasswordCredentials, Subscription } from '@supabase/supabase-js';
+import type { User, SignInWithPasswordCredentials, SignUpWithPasswordCredentials } from '@supabase/supabase-js'; // Removed Subscription as it's implicitly typed by onAuthStateChange
 import { signIn as supabaseSignIn, signUp as supabaseSignUp, signOut as supabaseSignOut, getCurrentUser, onAuthStateChange } from '../lib/auth';
+import { getUserRole, type UserRole, type UserRoleEnum } from '@/lib/supabaseQueries'; // Added imports
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
+  loading: boolean; // For initial user session loading
   error: string | null;
+  userRole: UserRoleEnum | null; // New
+  isLoadingRole: boolean;      // New
   signIn: (credentials: SignInWithPasswordCredentials) => Promise<{ error: string | null }>;
   signUp: (credentials: SignUpWithPasswordCredentials) => Promise<{ error: string | null }>;
   signOut: () => Promise<{ error: string | null }>;
@@ -15,36 +18,66 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // Start with loading true
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRoleEnum | null>(null); // New state
+  const [isLoadingRole, setIsLoadingRole] = useState<boolean>(false);
+
+  const fetchAndSetUserRole = async (userId: string | undefined) => {
+    if (!userId) {
+      setUserRole(null);
+      setIsLoadingRole(false); // Ensure loading is false if no user ID
+      return;
+    }
+    setIsLoadingRole(true);
+    try {
+      const roleInfo = await getUserRole(userId);
+      setUserRole(roleInfo?.role ?? null);
+      console.log(`[AuthContext] Role fetched for user ${userId}:`, roleInfo?.role ?? null);
+    } catch (err) {
+      console.error("[AuthContext] Error fetching user role:", err);
+      setUserRole(null);
+    } finally {
+      setIsLoadingRole(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    getCurrentUser()
-      .then(currentUser => {
-        setUser(currentUser);
-      })
-      .catch(err => {
-        console.error("Error getting current user on mount:", err);
-        setError("Failed to fetch user session."); // Or handle more gracefully
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    setLoading(true); // For initial session loading
+    // setIsLoadingRole(true); // setIsLoadingRole is handled by fetchAndSetUserRole
 
-    const subscription = onAuthStateChange((event, session) => {
-      setLoading(true);
-      setError(null); // Clear previous errors on auth state change
-      console.log('Auth state changed:', event, session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    const initializeSession = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        // Fetch role right after getting current user
+        await fetchAndSetUserRole(currentUser?.id);
+      } catch (err) {
+        console.error("[AuthContext] Error initializing session:", err);
+        setError("Failed to initialize user session.");
+        setUser(null);
+        setUserRole(null);
+      } finally {
+        setLoading(false); // Session loading finished
+      }
+    };
+
+    initializeSession();
+
+    const { data: authListener } = onAuthStateChange((event, session) => {
+      console.log('[AuthContext] Auth state changed:', event, session);
+      const authUser = session?.user ?? null;
+      setUser(authUser);
+      // Subsequent auth changes (login, logout) will also trigger role fetching.
+      // setLoading(true/false) for session is handled by initializeSession for initial load,
+      // and by signIn/signUp/signOut for subsequent actions.
+      // onAuthStateChange primarily updates user and role here.
+      setError(null);
+      fetchAndSetUserRole(authUser?.id);
     });
 
-    // Cleanup subscription on unmount
     return () => {
-      if (subscription && typeof subscription.unsubscribe === 'function') {
-        subscription.unsubscribe();
-      }
+      authListener?.unsubscribe();
     };
   }, []);
 
@@ -92,12 +125,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: authError.message };
     }
     // User state will be updated by onAuthStateChange
-    setUser(null); // Explicitly set user to null on signout
+    setUser(null);
+    setUserRole(null); // Clear userRole on sign out
     return { error: null };
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, error, userRole, isLoadingRole, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
